@@ -1,0 +1,16 @@
+body {
+    overflow: hidden;
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+}
+ 
+#piezas{
+    height: 600px;
+    width: 900px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(171, 171, 171);
+}
