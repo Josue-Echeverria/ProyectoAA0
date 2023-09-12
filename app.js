@@ -6,6 +6,12 @@ let SIZE = {width:0,height:0};
 let TAMAÑO = 4;
 let PIEZAS = [];
 let PIEZA_SELECCIONADA = null;
+let EMPTYPOS = {x: -1, y: -1}
+
+document.getElementById("suffle").addEventListener("click", function(evt){
+    shuffle();
+});
+
 
 /**Funcion principal que se ejecuta siempre que se cargue la pagina 
  * @summary:
@@ -46,6 +52,15 @@ function updateCanva(){
     }
 }
 
+function generateNotInList(lista, top){
+    for(let i = 0; i<top; i++){
+        for(let j = 0; j<top; j++){
+            if(!lista.some(([x, y]) => x === i && y === j))
+                return[i,j]
+        }
+    }
+}
+
 function generateRandomNotInList(lista, top){
     let randomX = 0;
     let randomY = 0;
@@ -74,6 +89,9 @@ function shuffle(){
         PIEZAS[i].y=loc.y;
     }
     updateCanva();
+    const pos = generateNotInList(tempList, TAMAÑO)
+    EMPTYPOS.x = pos[0];
+    EMPTYPOS.y = pos[1];
 }
 
 function cargarPiezas(){
@@ -85,6 +103,36 @@ function cargarPiezas(){
     }
     PIEZAS.pop()
 }
+
+
+function confirmMovement(pieza){
+    const posX = SIZE.width*EMPTYPOS.x/TAMAÑO
+    const posY = SIZE.height*EMPTYPOS.y/TAMAÑO
+    console.log(EMPTYPOS)
+    if(pieza.x+SIZE.width/TAMAÑO === posX && pieza.y === posY){
+        EMPTYPOS.x = pieza.x/(SIZE.width/TAMAÑO);
+        pieza.x = pieza.x+SIZE.width/TAMAÑO;
+        console.log("MOver derecha")
+    }
+    if(pieza.x-SIZE.width/TAMAÑO === posX && pieza.y === posY){
+        EMPTYPOS.x = pieza.x/(SIZE.width/TAMAÑO);        
+        pieza.x = pieza.x-SIZE.width/TAMAÑO
+        console.log("MOver izquierda")
+    }
+    if(pieza.y+SIZE.height/TAMAÑO === posY && pieza.x === posX){
+        EMPTYPOS.y = pieza.y/(SIZE.height/TAMAÑO);        
+        pieza.y = pieza.y+SIZE.height/TAMAÑO
+        console.log("MOver abajo")
+    }
+    if(pieza.y-SIZE.height/TAMAÑO === posY && pieza.x === posX){
+        EMPTYPOS.y = pieza.y/(SIZE.height/TAMAÑO);        
+        pieza.y = pieza.y-SIZE.height/TAMAÑO
+        console.log("MOver arriba")
+    }
+    console.log(EMPTYPOS)
+    updateCanva();
+}
+
 
 function getPiezaSeleccionada(loc){
     const rect = CANVAS.getBoundingClientRect();
@@ -104,8 +152,7 @@ function getPiezaSeleccionada(loc){
 function onclick(evt){
     PIEZA_SELECCIONADA = getPiezaSeleccionada(evt);
     if(PIEZA_SELECCIONADA != null){
-        console.log(PIEZA_SELECCIONADA.x)
-        console.log(PIEZA_SELECCIONADA.y)
+        confirmMovement(PIEZA_SELECCIONADA)
     }
 }
 class Pieza{
