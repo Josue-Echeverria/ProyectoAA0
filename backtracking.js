@@ -1,6 +1,6 @@
 //TODAVIA NO ESTA COMPLETO, CON RESPECTO A LA VERSION DE PYTHON
 
-function backtracking(estado, posVacia, estadoInicial, caminos, solucion, profundidad){
+function backtracking(estado, posVacia, estadoAnterior, caminos, solucion, profundidad){
     //document.write("Avanzando <br> Profundidad:", profundidad)
     //printMatrix(caminos)
     //console.log(estado)
@@ -29,11 +29,10 @@ function backtracking(estado, posVacia, estadoInicial, caminos, solucion, profun
         let nuevoEstado = posiblesEstados[i];
         let nuevoCamino = posiblesCaminos[i];
 
-        if (JSON.stringify(nuevoEstado) !== JSON.stringify(estadoInicial)) {
-            
+        if (JSON.stringify(nuevoEstado) !== JSON.stringify(estadoAnterior)) {
             let nuevosCaminos = deepCopyArray(caminos);
             nuevosCaminos.push(nuevoCamino);
-            let resultado = backtracking(nuevoEstado, nuevoCamino, estadoInicial, nuevosCaminos, solucion, profundidad - 1);
+            let resultado = backtracking(nuevoEstado, nuevoCamino, estado, nuevosCaminos, solucion, profundidad - 1);
             //document.write("Retrocediendo <br> Profundidad:", profundidad)
             //printMatrix(caminos)
             if(resultado != -1){
@@ -156,7 +155,6 @@ let matrizRand = [[1, 2, 3],
                    [7, 0, 8]];
 
 let posVacia = [2, 1];
-let estadoInicial = deepCopyArray(matrizRand)
 // Convert matriz_rand to a set containing a single deep copy
 let estadosProbados = new Set([matrizRand.map(row => [...row])]);
 
@@ -164,7 +162,7 @@ let profundidad = 15//calcularCantidadMovimientosNecesarios(matrizRand);
 document.write(profundidad)
 enter();
 
-resultado = backtracking(matrizRand, posVacia, estadoInicial, [], matrizBase, profundidad);
+resultado = backtracking(matrizRand, posVacia, [], [], matrizBase, profundidad);
 enter();
 
 
