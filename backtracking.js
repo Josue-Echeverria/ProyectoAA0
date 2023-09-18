@@ -1,6 +1,28 @@
-//TODAVIA NO ESTA COMPLETO, CON RESPECTO A LA VERSION DE PYTHON
+let iteraciones = [0]
 
-function backtracking(estado, posVacia, estadoAnterior, caminos, solucion, profundidad){
+class MatrixStorage {
+    constructor(){
+        this.testedMatrices = new Set();
+    }
+
+    serializeMatrix(matrix){
+        return JSON.stringify(matrix);
+    }
+
+    addTestedMatrix(matrix){
+        const key = this.serializeMatrix(matrix);
+        this.testedMatrices.add(key);
+    }
+
+    isTestedMatrix(matrix){
+        const key = this.serializeMatrix(matrix);
+        return this.testedMatrices.has(key);
+    }
+}
+
+encontrarSolucion8Puzzle(3)
+
+function backtracking(estado, posVacia, estadosProbados, caminos, solucion, profundidad, iteraciones){
     //document.write("Avanzando <br> Profundidad:", profundidad)
     //printMatrix(caminos)
     //console.log(estado)
@@ -15,7 +37,7 @@ function backtracking(estado, posVacia, estadoAnterior, caminos, solucion, profu
     if(profundidad < 1){
         return -1;
     }
-
+    iteraciones[0] += 1
     let posiblesCaminos = [];
     let posiblesEstados = [];
     generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEstados);
@@ -29,10 +51,11 @@ function backtracking(estado, posVacia, estadoAnterior, caminos, solucion, profu
         let nuevoEstado = posiblesEstados[i];
         let nuevoCamino = posiblesCaminos[i];
 
-        if (JSON.stringify(nuevoEstado) !== JSON.stringify(estadoAnterior)) {
+        if (!estadosProbados.isTestedMatrix(nuevoEstado)) {
             let nuevosCaminos = deepCopyArray(caminos);
             nuevosCaminos.push(nuevoCamino);
-            let resultado = backtracking(nuevoEstado, nuevoCamino, estado, nuevosCaminos, solucion, profundidad - 1);
+            estadosProbados.addTestedMatrix(nuevoEstado);
+            let resultado = backtracking(nuevoEstado, nuevoCamino, estadosProbados, nuevosCaminos, solucion, profundidad - 1, iteraciones);
             //document.write("Retrocediendo <br> Profundidad:", profundidad)
             //printMatrix(caminos)
             if(resultado != -1){
@@ -91,40 +114,72 @@ function generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEs
     }
 }
 
+function encontrarSolucion8Puzzle(n){
+    let matrizBase = [[1, 2, 3], 
+                   [4, 5, 6], 
+                   [7, 8, 0]];
+
+    let matrizRand = [[6, 5, 1],
+                    [7, 4, 0],
+                    [3, 8, 2]];
+
+    let posVacia = [1, 2];
+    // Convert matriz_rand to a set containing a single deep copy
+    let estadosProbados = new MatrixStorage();
+    estadosProbados.addTestedMatrix(matrizRand);
+
+    let profundidad = 35//calcularCantidadMovimientosNecesarios(matrizRand);
+
+    resultado = backtracking(matrizRand, posVacia, estadosProbados, [], matrizBase, profundidad, iteraciones);
+    enter();
+    mostrarSolucion(resultado, posVacia, matrizRand)
+
+    return resultado;
+}
+
+function mostrarSolucion(resultado, posVacia, matrizRand){
+    document.write("Cantidad de iteraciones:", iteraciones[0])
+    enter();
+    if (resultado != -1){
+        document.write("Matriz de que se parte: ")
+        printMatrix(matrizRand);
+        document.write("Posible camino encontrado: <br>")
+        
+        for (const camino of resultado){
+            document.write("[", camino, "]")
+        }
+        enter()
+        document.write("Vizualizacion del camino de la solucion <br>");
+        let fila = posVacia[0];
+        let columna = posVacia[1];
+
+        for (const movimiento of resultado) {
+            const filaSig = movimiento[0];
+            const columnaSig = movimiento[1];
+
+            // Swap elements in matrizRand
+            [matrizRand[fila][columna], matrizRand[filaSig][columnaSig]] = [matrizRand[filaSig][columnaSig], matrizRand[fila][columna]];
+
+            fila = filaSig;
+            columna = columnaSig;
+
+            // Print the matrizRand
+            printMatrix(matrizRand);
+        }
+        
+    }
+    else{
+        document.write("No se encontró solución para la profundidad usada")
+    }
+}
+
 function deepCopyArray(arr) {
     return arr.map(item => Array.isArray(item) ? deepCopyArray(item) : item);
   }
 
 function calcularCantidadMovimientosNecesarios(matrizRand){
-    let arrayRand = [];
-    let movimientosTotales = 0;
-    
-    for (const filaActual of matrizRand) {
-        for (let elemento of filaActual) { 
-            if (elemento == 0){
-                elemento = matrizRand.length * matrizRand.length;
-            } 
-            arrayRand.push(elemento);
-        }
-    }
-
-    let flag = true;
-    while (flag){
-        flag = false;
-        for (let i = 0; i < arrayRand.length; i++){
-            movimientosTotales += 1;
-            //document.write(arrayRand, "<br>")
-            if (arrayRand[i] > arrayRand[i+1]){
-                const temp = arrayRand[i];
-                arrayRand[i] = arrayRand[i+1]
-                arrayRand[i+1] = temp;
-                flag = true;
-                
-            }
-        }
-    }
-    
-    return movimientosTotales;
+    //FUNCION IMPORTANTE A IMPLEMENTAR PARA MEJORAR LA EFICIENCIA
+    return 0;
 }
 
 function enter(){
@@ -133,6 +188,7 @@ function enter(){
 
 function printMatrix(matrix) {
     document.write("<table border='1'>"); // Start an HTML table
+
     
     for (let i = 0; i < matrix.length; i++) {
         document.write("<tr>"); // Start a table row
@@ -143,51 +199,4 @@ function printMatrix(matrix) {
     }
     document.write("</table>"); // End the HTML table
     document.write("<br>")
-}
-
-
-let matrizBase = [[1, 2, 3], 
-                   [4, 5, 6], 
-                   [7, 8, 0]];
-
-let matrizRand = [[1, 2, 3], 
-                   [4, 5, 6], 
-                   [7, 0, 8]];
-
-let posVacia = [2, 1];
-// Convert matriz_rand to a set containing a single deep copy
-let estadosProbados = new Set([matrizRand.map(row => [...row])]);
-
-let profundidad = 15//calcularCantidadMovimientosNecesarios(matrizRand);
-document.write(profundidad)
-enter();
-
-resultado = backtracking(matrizRand, posVacia, [], [], matrizBase, profundidad);
-enter();
-
-
-if (resultado != -1){
-    document.write("Posible camino encontrado: <br>")
-    //document.write("[", resultado[i], "]", "<br>");
-    document.write("Vizualizacion del camino de la solucion <br>");
-    let fila = posVacia[0];
-    let columna = posVacia[1];
-
-    for (const movimiento of resultado) {
-        const filaSig = movimiento[0];
-        const columnaSig = movimiento[1];
-
-        // Swap elements in matrizRand
-        [matrizRand[fila][columna], matrizRand[filaSig][columnaSig]] = [matrizRand[filaSig][columnaSig], matrizRand[fila][columna]];
-
-        fila = filaSig;
-        columna = columnaSig;
-
-        // Print the matrizRand
-        printMatrix(matrizRand);
-    }
-    
-}
-else{
-    document.write("No se encontró solución para la profundidad usada")
 }
