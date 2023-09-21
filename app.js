@@ -3,13 +3,20 @@ let IMAGEN = null;
 let CANVAS = null;
 let CONTEXT = null;
 let SIZE = {width:0,height:0};
-let TAMAÑO = 4;
+let TAMAÑO = 3;
 let PIEZAS = [];
 let PIEZA_SELECCIONADA = null;
 let EMPTYPOS = {x: -1, y: -1}
+let MATRIZ_LOGICA
+let MATRIZ_OBJETIVO
+let dictObjetivo = {}
 
 document.getElementById("suffle").addEventListener("click", function(evt){
     shuffle();
+});
+
+document.getElementById("getSolution").addEventListener("click", function(evt){
+    calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica)
 });
 
 
@@ -18,7 +25,7 @@ document.getElementById("suffle").addEventListener("click", function(evt){
  * Define variables globales:
  *  -IMAGEN = La imagen que utilizara para el puzzle 
  *  -CANVAS = El canvas en donde se encontrara la imagen y los parametros de ancho y largo 
- *  -CONTEXT = Los valores de
+ *  -CONTEXT = Los valores de renderizado en un canvas 
  *  -SIZE = Los valores de ancho y largo de cada pieza 
  * 
  * Llama a las funciones necesarias para generar el puzzle
@@ -26,7 +33,7 @@ document.getElementById("suffle").addEventListener("click", function(evt){
 function main(){
     IMAGEN = document.getElementById("imagen");
     CANVAS = document.getElementById('myCanvas');
-    CONTEXT = CANVAS.getContext('2d');//
+    CONTEXT = CANVAS.getContext('2d');//Se utilizara el renderizado en 2d (para imagenes, formas, texto)
 
     let resizer = Math.min(
         900/IMAGEN.width,
@@ -87,20 +94,33 @@ function shuffle(){
         }
         PIEZAS[i].x=loc.x;
         PIEZAS[i].y=loc.y;
+        MATRIZ_LOGICA[randomY][randomX] = PIEZAS[i].numero
     }
     updateCanva();
     const pos = generateNotInList(tempList, TAMAÑO)
     EMPTYPOS.x = pos[0];
     EMPTYPOS.y = pos[1];
+    MATRIZ_LOGICA[pos[1]][pos[0]] = 0
 }
 
 function cargarPiezas(){
     PIEZAS = [];
+    MATRIZ_LOGICA = []
+    MATRIZ_OBJETIVO = []
+    counter = 1
     for(let i = 0; i<TAMAÑO; i++){
+        MATRIZ_LOGICA.push([])
+        MATRIZ_OBJETIVO.push([])
         for(let j = 0; j<TAMAÑO; j++){
-            PIEZAS.push(new Pieza(i,j))
+            PIEZAS.push(new Pieza(i,j,counter))
+            MATRIZ_OBJETIVO[i][j] = counter
+            MATRIZ_LOGICA[i][j] = 0
+            dictObjetivo[counter] = [i,j]
+            counter++;
         }
     }
+    MATRIZ_OBJETIVO[MATRIZ_LOGICA.length-1][MATRIZ_OBJETIVO[0].length-1] = 0;
+    delete dictObjetivo[counter-1]
     PIEZAS.pop()
 }
 
@@ -108,28 +128,31 @@ function cargarPiezas(){
 function confirmMovement(pieza){
     const posX = SIZE.width*EMPTYPOS.x/TAMAÑO
     const posY = SIZE.height*EMPTYPOS.y/TAMAÑO
-    console.log(EMPTYPOS)
+
     if(pieza.x+SIZE.width/TAMAÑO === posX && pieza.y === posY){
+        MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = pieza.numero
         EMPTYPOS.x = pieza.x/(SIZE.width/TAMAÑO);
+        MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = 0
         pieza.x = pieza.x+SIZE.width/TAMAÑO;
-        console.log("MOver derecha")
     }
     if(pieza.x-SIZE.width/TAMAÑO === posX && pieza.y === posY){
-        EMPTYPOS.x = pieza.x/(SIZE.width/TAMAÑO);        
+        MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = pieza.numero
+        EMPTYPOS.x = pieza.x/(SIZE.width/TAMAÑO);
+        MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = 0        
         pieza.x = pieza.x-SIZE.width/TAMAÑO
-        console.log("MOver izquierda")
     }
     if(pieza.y+SIZE.height/TAMAÑO === posY && pieza.x === posX){
-        EMPTYPOS.y = pieza.y/(SIZE.height/TAMAÑO);        
+        MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = pieza.numero
+        EMPTYPOS.y = pieza.y/(SIZE.height/TAMAÑO);    
+        MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = 0      
         pieza.y = pieza.y+SIZE.height/TAMAÑO
-        console.log("MOver abajo")
     }
     if(pieza.y-SIZE.height/TAMAÑO === posY && pieza.x === posX){
-        EMPTYPOS.y = pieza.y/(SIZE.height/TAMAÑO);        
+        MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = pieza.numero
+        EMPTYPOS.y = pieza.y/(SIZE.height/TAMAÑO);
+        MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = 0  
         pieza.y = pieza.y-SIZE.height/TAMAÑO
-        console.log("MOver arriba")
     }
-    console.log(EMPTYPOS)
     updateCanva();
 }
 
@@ -137,10 +160,10 @@ function confirmMovement(pieza){
 function getPiezaSeleccionada(loc){
     const rect = CANVAS.getBoundingClientRect();
     for(let i = 0; i<PIEZAS.length;i++){
-        if(loc.x - rect.top + window.scrollX > PIEZAS[i].x
-        && loc.x - rect.top + window.scrollX < PIEZAS[i].x+PIEZAS[i].width 
-        && loc.y - rect.top + window.scrollY > PIEZAS[i].y
-        && loc.y - rect.top + window.scrollY < PIEZAS[i].y+PIEZAS[i].height)
+        if(loc.x - rect.x > PIEZAS[i].x
+        && loc.x - rect.x < PIEZAS[i].x+PIEZAS[i].width 
+        && loc.y - rect.y > PIEZAS[i].y
+        && loc.y - rect.y < PIEZAS[i].y+PIEZAS[i].height)
         {
             return PIEZAS[i];
         }
@@ -156,13 +179,14 @@ function onclick(evt){
     }
 }
 class Pieza{
-    constructor(fila, columna){
+    constructor(fila, columna, numero){
         this.fila = fila;
         this.columna = columna;
         this.x = SIZE.width*this.columna/TAMAÑO;
         this.y = SIZE.height*this.fila/TAMAÑO;
         this.width = SIZE.width/TAMAÑO;
         this.height = SIZE.height/TAMAÑO;
+        this.numero = numero
     }
     draw(context){
         context.beginPath();
@@ -179,4 +203,157 @@ class Pieza{
         context.rect(this.x,this.y,this.width,this.height);
         context.stroke();
     }
+}
+
+
+function calcularSolucionConAEstrella(){
+    let matrizObjetivo = []
+    let posObjetivo = []
+    for(let i = 0; i < PIEZAS.length; i++){
+        posObjetivo = dictObjetivo[i+1]
+        heuristica = Math.abs(posObjetivo[1] - PIEZAS[i].x/(SIZE.width/TAMAÑO)) + Math.abs(posObjetivo[0] - PIEZAS[i].y/(SIZE.height/TAMAÑO))
+        console.log("NUMBER"+ PIEZAS[i].numero)
+        console.log(heuristica)
+    }
+}
+
+
+function PriorityQueue() {
+    this.elements = [];
+}
+
+PriorityQueue.prototype.enqueue = function (e) {
+    this.elements.push(e);
+    this.elements.sort((a, b) => a.priority - b.priority);
+};
+
+PriorityQueue.prototype.dequeue = function () {
+    return this.elements.shift();
+};
+
+PriorityQueue.prototype.isEmpty = function () {
+    return !this.elements.length;
+};
+
+function Node(state, parent, action, pathCost, heuristicCost) {
+    this.state = state;
+    this.parent = parent;
+    this.action = action;
+    this.pathCost = pathCost;
+    this.priority = pathCost + heuristicCost;
+}
+
+
+function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovimientos, calcularHeuristica) {
+    let frontier = new PriorityQueue();
+    frontier.enqueue(new Node(startState, null, null, 0, calcularHeuristica(startState)));
+    let explored = new Set();
+    counter = 20 
+    while (!frontier.isEmpty()) {
+//    while (counter>0) {
+        let node = frontier.dequeue();
+        printMatriz(node.state)
+        if (arraysEqual(node.state, objetivo)) {
+            return node;
+        }
+        explored.add(node.state.toString());
+        let movimientos = calcularPosiblesMovimientos(node.state);
+        
+        for (let movimiento of movimientos) {
+            if(movimiento.length !== 0){
+                let copiaEstado = JSON.parse(JSON.stringify(node.state))
+                let childNode = new Node(realizarMovimiento(copiaEstado,movimiento[0],movimiento[1]), node, movimiento, node.pathCost + 1, calcularHeuristica(movimiento, objetivo));
+                if (!explored.has(childNode.state.toString())) {
+                    frontier.enqueue(childNode);
+                }
+            }
+        }
+        counter--
+    }
+    return false;
+}
+
+function printMatriz(matriz){
+    for(let i = 0; i < matriz.length; i++){
+        console.log(matriz[i])
+    }
+    console.log(" ");
+}
+
+function posicionVacia(estado){
+    for(let i = 0; i < estado.length; i++){
+        for(let j = 0; j < estado.length; j++){
+            if(estado[j][i] === 0) return [j,i]
+        }
+    }
+}
+
+
+function arraysEqual(a, b) {
+    return a.length === b.length && a.every((val, index) => val === b[index]);
+}
+
+function calcularHeuristica(estadoActual){
+    let sumatoriaCaminos = 0;
+    for(let i = 0; i < estadoActual.length; i++){
+        for(let j = 0; j < estadoActual.length; j++){
+            
+            let numActual = estadoActual[i][j]
+
+            let posObjetivoNumActual = dictObjetivo[numActual]
+            if(posObjetivoNumActual === undefined) continue
+
+            let distancia = Math.abs(i-posObjetivoNumActual[0])+Math.abs(j-posObjetivoNumActual[1])
+
+            sumatoriaCaminos += distancia
+        }
+    }
+    return sumatoriaCaminos/(TAMAÑO**2)
+}
+
+function calcularMovimientosParaVacio(estadoActual){
+    let posVacia = posicionVacia(estadoActual)
+    let moverDerecha = 0
+    let moverIzquierda = 0
+    let moverArriba = 0
+    let moverAbajo = 0
+
+    if(posVacia[0]+1 < TAMAÑO)
+        moverAbajo = 1
+    else
+        moverAbajo = 10000
+
+    if(posVacia[0]-1 >= 0)
+        moverArriba = 1
+    else
+        moverArriba = 10000
+
+    if(posVacia[1]-1 >= 0)
+        moverIzquierda = 1
+    else
+        moverIzquierda = 10000
+
+    if(posVacia[1]+1 < TAMAÑO)
+        moverDerecha = 1
+    else
+        moverDerecha = 10000
+
+    let posiblesMovimientos = []
+    
+    if(10000 !== moverDerecha) 
+        posiblesMovimientos.push([posVacia, [posVacia[0],posVacia[1]+1]])
+    if(10000 !== moverIzquierda) 
+        posiblesMovimientos.push([posVacia, [posVacia[0],posVacia[1]-1]])
+    if(10000 !== moverArriba) 
+        posiblesMovimientos.push([posVacia, [posVacia[0]-1,posVacia[1]]])
+    if(10000 !== moverAbajo)
+        posiblesMovimientos.push([posVacia, [posVacia[0]+1,posVacia[1]]])
+    return posiblesMovimientos;
+}
+
+
+function realizarMovimiento(estadoActual, posicionInicial, posicionFinal){
+    estadoActual[posicionInicial[0]][posicionInicial[1]] = estadoActual[posicionFinal[0]][posicionFinal[1]]
+    estadoActual[posicionFinal[0]][posicionFinal[1]] = 0;
+    return estadoActual;
 }

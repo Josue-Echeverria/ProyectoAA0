@@ -19,3 +19,9 @@ body {
 #piezas button{
     margin-top: 20px
 }
+
+textarea {
+    resize: none;
+    height: 600px;
+    width: 300px;
+}
