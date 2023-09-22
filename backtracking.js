@@ -18,9 +18,14 @@ class MatrixStorage {
         const key = this.serializeMatrix(matrix);
         return this.testedMatrices.has(key);
     }
+    createCopy() {
+        let nuwStorageMatrix = new MatrixStorage();
+        nuwStorageMatrix.testedMatrices = new Set(this.testedMatrices);
+        return nuwStorageMatrix;
+    }
 }
 
-encontrarSolucion8Puzzle(3)
+//encontrarSolucionPuzzle(3)
 
 function backtracking(estado, posVacia, estadosProbados, caminos, solucion, profundidad, iteraciones){
     //document.write("Avanzando <br> Profundidad:", profundidad)
@@ -53,7 +58,9 @@ function backtracking(estado, posVacia, estadosProbados, caminos, solucion, prof
 
         if (!estadosProbados.isTestedMatrix(nuevoEstado)) {
             let nuevosCaminos = deepCopyArray(caminos);
+            //let nuevosEstados = estadosProbados.createCopy();
             nuevosCaminos.push(nuevoCamino);
+            //nuevosEstados.addTestedMatrix(nuevoEstado);
             estadosProbados.addTestedMatrix(nuevoEstado);
             let resultado = backtracking(nuevoEstado, nuevoCamino, estadosProbados, nuevosCaminos, solucion, profundidad - 1, iteraciones);
             //document.write("Retrocediendo <br> Profundidad:", profundidad)
@@ -114,7 +121,7 @@ function generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEs
     }
 }
 
-function encontrarSolucion8Puzzle(n){
+function encontrarSolucionPuzzle(n){
     let matrizBase = [[1, 2, 3], 
                    [4, 5, 6], 
                    [7, 8, 0]];
@@ -124,11 +131,24 @@ function encontrarSolucion8Puzzle(n){
                     [3, 8, 2]];
 
     let posVacia = [1, 2];
+
+    matrizBase = [[1, 2, 3, 4]
+    ,[5, 6, 7, 8]
+    ,[9, 10, 11, 12]
+    ,[13, 14, 15, 0]]
+
+    matrizRand = [[1, 2, 3, 4]
+    ,[5, 6, 7, 8]
+    ,[9, 10, 11, 12]
+    ,[13, 14, 0, 15]]
+
+    posVacia = [3, 2]
+
     // Convert matriz_rand to a set containing a single deep copy
     let estadosProbados = new MatrixStorage();
     estadosProbados.addTestedMatrix(matrizRand);
-
-    let profundidad = 35//calcularCantidadMovimientosNecesarios(matrizRand);
+    //27
+    let profundidad = 30//calcularCantidadMovimientosNecesarios(matrizRand);
 
     resultado = backtracking(matrizRand, posVacia, estadosProbados, [], matrizBase, profundidad, iteraciones);
     enter();
@@ -140,20 +160,23 @@ function encontrarSolucion8Puzzle(n){
 function mostrarSolucion(resultado, posVacia, matrizRand){
     document.write("Cantidad de iteraciones:", iteraciones[0])
     enter();
+    
     if (resultado != -1){
+        document.write("Cantidad de caminos: ", resultado.length)
+        enter()
         document.write("Matriz de que se parte: ")
         printMatrix(matrizRand);
         document.write("Posible camino encontrado: <br>")
         
-        for (const camino of resultado){
+        /*for (const camino of resultado){
             document.write("[", camino, "]")
-        }
+        }*/
         enter()
         document.write("Vizualizacion del camino de la solucion <br>");
         let fila = posVacia[0];
         let columna = posVacia[1];
 
-        for (const movimiento of resultado) {
+        /*for (const movimiento of resultado) {
             const filaSig = movimiento[0];
             const columnaSig = movimiento[1];
 
@@ -165,7 +188,7 @@ function mostrarSolucion(resultado, posVacia, matrizRand){
 
             // Print the matrizRand
             printMatrix(matrizRand);
-        }
+        }*/
         
     }
     else{
@@ -175,7 +198,7 @@ function mostrarSolucion(resultado, posVacia, matrizRand){
 
 function deepCopyArray(arr) {
     return arr.map(item => Array.isArray(item) ? deepCopyArray(item) : item);
-  }
+}
 
 function calcularCantidadMovimientosNecesarios(matrizRand){
     //FUNCION IMPORTANTE A IMPLEMENTAR PARA MEJORAR LA EFICIENCIA

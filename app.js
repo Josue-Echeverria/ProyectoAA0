@@ -11,12 +11,18 @@ let MATRIZ_LOGICA
 let MATRIZ_OBJETIVO
 let dictObjetivo = {}
 
+
 document.getElementById("suffle").addEventListener("click", function(evt){
     shuffle();
 });
 
 document.getElementById("getSolution").addEventListener("click", function(evt){
     calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica)
+    //calcularSolucionConBacktracking()
+});
+
+document.getElementById("solve").addEventListener("click", function(evt){
+    calcularSolucionConBacktracking();
 });
 
 
@@ -205,6 +211,185 @@ class Pieza{
     }
 }
 
+class MatrixStorage {
+    constructor(){
+        this.testedMatrices = new Set();
+    }
+
+    serializeMatrix(matrix){
+        return JSON.stringify(matrix);
+    }
+
+    addTestedMatrix(matrix){
+        const key = this.serializeMatrix(matrix);
+        this.testedMatrices.add(key);
+    }
+
+    isTestedMatrix(matrix){
+        const key = this.serializeMatrix(matrix);
+        return this.testedMatrices.has(key);
+    }
+    createCopy() {
+        let nuwStorageMatrix = new MatrixStorage();
+        nuwStorageMatrix.testedMatrices = new Set(this.testedMatrices);
+        return nuwStorageMatrix;
+    }
+}
+
+function backtracking(estado, posVacia, estadosProbados, caminos, solucion, profundidad, iteraciones){
+    //document.write("Avanzando <br> Profundidad:", profundidad)
+    //printMatrix(caminos)
+    //console.log(estado)
+    //document.write("Estado actual <br>")
+    //printMatrix(estado)
+    //printMatrix(solucion)
+    if(JSON.stringify(estado) === JSON.stringify(solucion)){
+        //document.write("Suuuuuu <br>")
+        return caminos;
+    }
+
+    if(profundidad < 1){
+        return -1;
+    }
+    //iteraciones[0] += 1
+    let posiblesCaminos = [];
+    let posiblesEstados = [];
+    generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEstados);
+    
+    //document.write("Posibles caminos <br>")
+    //printMatrix(posiblesCaminos);
+    //document.write("Posibles estados <br>")
+    //printMatrix(posiblesEstados);
+    
+    for(let i = 0; i < posiblesEstados.length; i++){
+        let nuevoEstado = posiblesEstados[i];
+        let nuevoCamino = posiblesCaminos[i];
+
+        if (!estadosProbados.isTestedMatrix(nuevoEstado)) {
+            let nuevosCaminos = deepCopyArray(caminos);
+            //let nuevosEstados = estadosProbados.createCopy();
+            nuevosCaminos.push(nuevoCamino);
+            //nuevosEstados.addTestedMatrix(nuevoEstado);
+            estadosProbados.addTestedMatrix(nuevoEstado);
+            let resultado = backtracking(nuevoEstado, nuevoCamino, estadosProbados, nuevosCaminos, solucion, profundidad - 1, iteraciones);
+            //document.write("Retrocediendo <br> Profundidad:", profundidad)
+            //printMatrix(caminos)
+            if(resultado != -1){
+                return resultado 
+            }
+        }
+    } 
+
+    return -1
+}
+
+function generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEstados){
+    const fila = posVacia[0];
+    const columna = posVacia[1];
+    const n = estado.length;
+    let temp = estado
+
+    if (fila > 0){              //pasar el vacio para arriba
+        let posibleEstado = deepCopyArray(estado);
+        const temp = posibleEstado[fila][columna];
+        posibleEstado[fila][columna] = posibleEstado[fila - 1][columna];
+        posibleEstado[fila - 1][columna] = temp;
+        //printMatrix(estado);
+        posiblesEstados.push(posibleEstado);
+        posiblesCaminos.push([fila - 1, columna]);
+    }
+
+    if (fila < n - 1){          //pasar el vacio para abajo
+        let posibleEstado = deepCopyArray(estado);
+        const temp = posibleEstado[fila][columna];
+        posibleEstado[fila][columna] = posibleEstado[fila + 1][columna];
+        posibleEstado[fila + 1][columna] = temp;
+        //printMatrix(estado);
+        posiblesEstados.push(posibleEstado);
+        posiblesCaminos.push([fila + 1, columna]);
+    }
+
+    if (columna > 0){           //pasar el vacio para la izquierda
+        let posibleEstado = deepCopyArray(estado);
+        const temp = posibleEstado[fila][columna];
+        posibleEstado[fila][columna] = posibleEstado[fila][columna - 1];
+        posibleEstado[fila][columna - 1] = temp;
+        //printMatrix(estado);
+        posiblesEstados.push(posibleEstado);
+        posiblesCaminos.push([fila, columna - 1]);
+    }
+
+    if (columna < n - 1){       //pasar el vacio para la derecha
+        let posibleEstado = deepCopyArray(estado);
+        const temp = posibleEstado[fila][columna];
+        posibleEstado[fila][columna] = posibleEstado[fila][columna + 1];
+        posibleEstado[fila][columna + 1] = temp;
+        //printMatrix(estado);
+        posiblesEstados.push(posibleEstado);
+        posiblesCaminos.push([fila, columna + 1]);
+    }
+}
+
+function deepCopyArray(arr) {
+    return arr.map(item => Array.isArray(item) ? deepCopyArray(item) : item);
+}
+
+function buscarPieza(fil, col){
+    x = SIZE.width*col/TAMAÑO;
+    y = SIZE.height*fil/TAMAÑO;
+
+    for(let i = 0; i<PIEZAS.length;i++){
+        if(PIEZAS[i].x === x && PIEZAS[i].y === y){
+            return PIEZAS[i]
+        }
+    }
+}
+
+function colocarSolucion(resultado, posVacia, matrizRand){    
+    let fil = posVacia[0];
+    let col = posVacia[1];
+
+    for (const movimiento of resultado) {
+        const filSig = movimiento[0];
+        const colSig = movimiento[1];
+        let pieza = buscarPieza(filSig, colSig);
+
+        pieza.x = SIZE.width*col/TAMAÑO;
+        pieza.y = SIZE.height*fil/TAMAÑO;        
+        updateCanva();
+
+        [MATRIZ_LOGICA[fil][col], MATRIZ_LOGICA[filSig][colSig]] = [MATRIZ_LOGICA[filSig][colSig], MATRIZ_LOGICA[fil][col]];
+
+        fil = filSig;
+        col = colSig;
+    }
+}
+
+function calcularSolucionConBacktracking(){
+    let matrizBase = deepCopyArray(MATRIZ_OBJETIVO)
+    
+    let matrizRand = deepCopyArray(MATRIZ_LOGICA)
+    console.log(matrizRand)
+    let posVacia = [];
+    posVacia.push(EMPTYPOS.y);
+    posVacia.push(EMPTYPOS.x);
+
+    let estadosProbados = new MatrixStorage();
+    estadosProbados.addTestedMatrix(matrizRand);
+    
+    let profundidad = 200 //calcularCantidadMovimientosNecesarios(matrizRand);
+
+    resultado = backtracking(matrizRand, posVacia, estadosProbados, [], matrizBase, profundidad);
+    console.log(resultado)
+    const divElement = document.getElementById('textArea');
+    if (resultado != -1) {
+        colocarSolucion(resultado, posVacia, matrizRand);
+        return;
+    }
+    else{
+        console.log("No hay solucion posible o la profundidad no es suficiente");
+    }
+}
 
 function calcularSolucionConAEstrella(){
     let matrizObjetivo = []
