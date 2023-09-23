@@ -291,15 +291,7 @@ function onclick(evt){
     }
 }
 
-/**
- * 
- * @param {Array<Array<Int>>} startState // Estado en el que inicia el juego al presionar el boton
- * @param {Array<Array<Int>>} objetivo // La matriz que se busca 
- * @param {Function} calcularPosiblesMovimientos // Funcion que calcula los posibles movimientos para el estado actual
- * @param {Function} calcularHeuristica // Funcion para calcular 
- * @returns {Node}El nodo para llegar a la solucion 
- * 
- */
+
 class MatrixStorage {
     constructor(){
         this.testedMatrices = new Set();
@@ -482,44 +474,16 @@ function calcularSolucionConBacktracking(){
     }
 }
 
-function calcularSolucionConAEstrella(){
-    let matrizObjetivo = []
-    let posObjetivo = []
-    for(let i = 0; i < PIEZAS.length; i++){
-        posObjetivo = dictObjetivo[i+1]
-        heuristica = Math.abs(posObjetivo[1] - PIEZAS[i].x/(SIZE.width/TAMAÑO)) + Math.abs(posObjetivo[0] - PIEZAS[i].y/(SIZE.height/TAMAÑO))
-        console.log("NUMBER"+ PIEZAS[i].numero)
-        console.log(heuristica)
-    }
-}
 
-
-function PriorityQueue() {
-    this.elements = [];
-}
-
-PriorityQueue.prototype.enqueue = function (e) {
-    this.elements.push(e);
-    this.elements.sort((a, b) => a.priority - b.priority);
-};
-
-PriorityQueue.prototype.dequeue = function () {
-    return this.elements.shift();
-};
-
-PriorityQueue.prototype.isEmpty = function () {
-    return !this.elements.length;
-};
-
-function Node(state, parent, action, pathCost, heuristicCost) {
-    this.state = state;
-    this.parent = parent;
-    this.action = action;
-    this.pathCost = pathCost;
-    this.priority = pathCost + heuristicCost;
-}
-
-
+/**
+ * 
+ * @param {Array<Array<Int>>} startState // Estado en el que inicia el juego al presionar el boton
+ * @param {Array<Array<Int>>} objetivo // La matriz que se busca 
+ * @param {Function} calcularPosiblesMovimientos // Funcion que calcula los posibles movimientos para el estado actual
+ * @param {Function} calcularHeuristica // Funcion para calcular 
+ * @returns {Node}El nodo para llegar a la solucion 
+ * 
+ */
 function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovimientos, calcularHeuristica) {
     let frontier = new PriorityQueue();// Variable que lleva cuenta de todas las soluciones posibles 
     frontier.enqueue(new Node(startState, null, null, 0, calcularHeuristica(startState)));// Se guarda la primera con la matriz que inicia el juego
