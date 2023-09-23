@@ -65,6 +65,10 @@ function updateCanva(){
     }
 }
 
+function esperar(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
 function generateNotInList(lista, top){
     for(let i = 0; i<top; i++){
         for(let j = 0; j<top; j++){
@@ -345,7 +349,7 @@ function buscarPieza(fil, col){
     }
 }
 
-function colocarSolucion(resultado, posVacia, matrizRand){    
+async function colocarSolucion(resultado, posVacia, matrizRand){    
     let fil = posVacia[0];
     let col = posVacia[1];
 
@@ -362,6 +366,8 @@ function colocarSolucion(resultado, posVacia, matrizRand){
 
         fil = filSig;
         col = colSig;
+
+        await esperar(50)
     }
 }
 
