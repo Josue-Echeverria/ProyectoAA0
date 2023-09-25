@@ -19,7 +19,8 @@ document.getElementById("suffle").addEventListener("click", function(evt){
 
 
 document.getElementById("getSolution").addEventListener("click", function(evt){
-    calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica)
+    solucionToString(calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica))
+
     //calcularSolucionConBacktracking()
 });
 
@@ -51,10 +52,10 @@ function movimientoToString(movimiento){
     let posicionFinal = movimiento[1]
     const movimientoX = posicionFinal[0] - posicionInicial[0]
     const movimientoY = posicionFinal[1] - posicionInicial[1]
-    if(movimientoX === 1) return "Mover la posicion " + posicionInicial.reverse() + " hacia la derecha\n"
-    else if(movimientoX === -1) return "Mover la posicion " + posicionInicial.reverse() + " hacia la izquierda\n"
-    else if(movimientoY === 1) return "Mover la posicion " + posicionInicial.reverse() + " hacia abajo\n"
-    else if(movimientoY === -1) return "Mover la posicion " + posicionInicial.reverse() + " hacia arriba\n"
+    if(movimientoX === 1) return posicionInicial.reverse() + " hacia la derecha\n"
+    else if(movimientoX === -1) return posicionInicial.reverse() + " hacia la izquierda\n"
+    else if(movimientoY === 1) return  posicionInicial.reverse() + " hacia abajo\n"
+    else if(movimientoY === -1) return  posicionInicial.reverse() + " hacia arriba\n"
 }
 
 
@@ -488,8 +489,13 @@ function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovi
     let frontier = new PriorityQueue();// Variable que lleva cuenta de todas las soluciones posibles 
     frontier.enqueue(new Node(startState, null, null, 0, calcularHeuristica(startState)));// Se guarda la primera con la matriz que inicia el juego
     let explored = new Set(); // Para saber cuales soluciones ya se consideraron  
+    let matrizMovida;
+    let movimientos;
+    let childNode;
+    let copiaEstado;
+    let node;
     while (!frontier.isEmpty()) { //Mientras hayan posibles soluciones
-        let node = frontier.dequeue();// Se saca/almacena el primer nodo de la cola
+        node = frontier.dequeue();// Se saca/almacena el primer nodo de la cola
         printMatriz(node.state)
         if (matrixEqual(node.state, objetivo)) {// SI el estado el nodo sacado es igual al objetivo
             return node;
@@ -497,13 +503,15 @@ function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovi
         // Si no es
         explored.add(node.state.toString());// Se almacena esa solucion
 
-        let movimientos = calcularPosiblesMovimientos(node.state);// Se calcula que movimientos se pueden hacer 
+        movimientos = calcularPosiblesMovimientos(node.state);// Se calcula que movimientos se pueden hacer 
         
         for (let movimiento of movimientos) {
             if(movimiento.length !== 0){
-                let copiaEstado = JSON.parse(JSON.stringify(node.state))// Se saca una copia del estado actual 
+                //console.log(movimiento)
+                copiaEstado = JSON.parse(JSON.stringify(node.state))// Se saca una copia del estado actual 
                 // Se genera un nuevo nodo a partir de la conpia con el movimiento 
-                let childNode = new Node(realizarMovimiento(copiaEstado,movimiento[0],movimiento[1]), node, movimiento, node.pathCost + 1, calcularHeuristica(movimiento, objetivo));
+                matrizMovida = realizarMovimiento(copiaEstado,movimiento[0],movimiento[1])
+                childNode = new Node(matrizMovida, node, movimiento, node.pathCost + 1, calcularHeuristica(matrizMovida));
                 if (!explored.has(childNode.state.toString())) {// Si el nuevo nodo no esta registrado 
                     frontier.enqueue(childNode);// Se almacena en la cola de soluciones 
                 }
@@ -555,6 +563,10 @@ function matrixEqual(a,b){
     }
 }
 
+function arraysEqual(a, b) { 
+    return a.length === b.length && a.every((val, index) => val === b[index]); 
+} 
+
 /**
  * @param {Array<Array<Int>>} estadoActual Matriz  
  * @returns Suma de distancias de todas las piezas hacia donde deberian de estar en la Matriz
@@ -562,9 +574,8 @@ function matrixEqual(a,b){
  * @description Analiza y suma que tan lejos estan las piezas de su posicion objetivo y retorna esta suma entre la cantidad de piezas en el canvas 
  */
 function calcularHeuristica(estadoActual){
-    let sumatoriaCaminos = 0;
+    let distanciaTotal = 0;
 
-    // Recorre los numeros de la matriz cuadrada
     for(let i = 0; i < estadoActual.length; i++){
         for(let j = 0; j < estadoActual.length; j++){
             
@@ -574,12 +585,19 @@ function calcularHeuristica(estadoActual){
 
             if(posObjetivoNumActual === undefined) continue // En caso que el numero se 0 (No tiene una posicion objetivo)
 
-            let distancia = Math.abs(i-posObjetivoNumActual[0])+Math.abs(j-posObjetivoNumActual[1])// Resta de puntos y suma del resultado 
+            // Calcula la distancia de Manhattan para la pieza actual
+            let distancia = Math.abs(i - posObjetivoNumActual[0]) + Math.abs(j - posObjetivoNumActual[1]);
 
-            sumatoriaCaminos += distancia// Se alamacena la distancia
+            // Ajusta la distancia si hay una pieza en el camino
+            if ((i != posObjetivoNumActual[0] && estadoActual[posObjetivoNumActual[0]][j] != 0) ||
+                (j != posObjetivoNumActual[1] && estadoActual[i][posObjetivoNumActual[1]] != 0)) {
+                distancia += 3;  // Ajusta el costo
+            }
+
+            distanciaTotal += distancia;
         }
     }
-    return sumatoriaCaminos/(TAMAÑO**2)
+    return distanciaTotal;
 }
 
 /**
@@ -599,31 +617,31 @@ function calcularMovimientosParaVacio(estadoActual){
     let moverAbajo = 1000;
 
     
-    if(posVacia[0]+1 < TAMAÑO) moverAbajo = 1;// Verifica si es posible moverse hacia abajo
-    
-    if(posVacia[0]-1 >= 0) moverArriba = 1;// Verifica si es posible moverse hacia arriba
-
-    if(posVacia[1]-1 >= 0) moverIzquierda = 1;// Verifica si es posible moverse hacia la izquierda
-
-    if(posVacia[1]+1 < TAMAÑO) moverDerecha = 1;// Verifica si es posible moverse hacia la derecha
-    
+    if(posVacia[0]+1 < TAMAÑO) // Verifica si es posible moverse hacia abajo
+        moverAbajo = 1;
+    if(posVacia[0]-1 >= 0) // Verifica si es posible moverse hacia arriba
+        moverArriba = 1;
+    if(posVacia[1]-1 >= 0)// Verifica si es posible moverse hacia la izquierda
+        moverIzquierda = 1;
+    if(posVacia[1]+1 < TAMAÑO) // Verifica si es posible moverse hacia la derecha
+        moverDerecha = 1;
     
     let posiblesMovimientos = [];// Array para almacenar los posibles movimientos
     
     // Si es posible moverse hacia la derecha, añade este movimiento a la lista de posibles movimientos.
-    if(10000 !== moverDerecha) 
+    if(1000 !== moverDerecha) 
         posiblesMovimientos.push([posVacia, [posVacia[0],posVacia[1]+1]]);
     
     // Si es posible moverse hacia la izquierda, añade este movimiento a la lista de posibles movimientos.
-    if(10000 !== moverIzquierda) 
+    if(1000 !== moverIzquierda) 
         posiblesMovimientos.push([posVacia, [posVacia[0],posVacia[1]-1]]);
     
     // Si es posible moverse hacia arriba, añade este movimiento a la lista de posibles movimientos.
-    if(10000 !== moverArriba) 
+    if(1000 !== moverArriba) 
         posiblesMovimientos.push([posVacia, [posVacia[0]-1,posVacia[1]]]);
     
     // Si es posible moverse hacia abajo, añade este movimiento a la lista de posibles movimientos.
-    if(10000 !== moverAbajo)
+    if(1000 !== moverAbajo)
         posiblesMovimientos.push([posVacia, [posVacia[0]+1,posVacia[1]]]);
     
     // Devuelve la lista de posibles movimientos.
@@ -682,7 +700,7 @@ function PriorityQueue() {
 
 PriorityQueue.prototype.enqueue = function (e) {
     this.elements.push(e);
-    this.elements.sort((a, b) => b.priority - a.priority);
+    this.elements.sort((a, b) => a.priority - b.priority);
 };
 
 PriorityQueue.prototype.dequeue = function () {
