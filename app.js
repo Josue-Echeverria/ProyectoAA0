@@ -613,21 +613,6 @@ function realizarMovimiento(estadoActual, posicionInicial, posicionFinal){
 /******************************************* funciones sin importancia ****************************************************************/
 
 
-
-document.getElementById("generate").addEventListener("click", function(evt){
-    TAMAÑO = document.getElementById("tamaño").value
-    cargarPiezas();
-    updateCanva();
-});
-
-document.getElementById("getSolutionA*").addEventListener("click", function(evt){
-    let solucion = calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica)
-    if(solucion !== null)
-        solucionToString(solucion)
-
-    //calcularSolucionConBacktracking()
-});
-
 /**
  * @param {Node} nodo 
  * 
@@ -643,9 +628,6 @@ function solucionToString(nodo){
         contador++;
     }while(temp.action != null)
 }
-document.getElementById("solve").addEventListener("click", function(evt){
-    calcularSolucionConBacktracking();
-});
 
 /**
  * @param {Array<Array<Int>>} movimiento El movimiento realizado [PosicionInicial, PosicionFinal]
@@ -707,6 +689,24 @@ function matrixEqual(a,b){
         return true;
     }
 }
+
+
+document.getElementById("generate").addEventListener("click", function(evt){
+    TAMAÑO = document.getElementById("tamaño").value
+    cargarPiezas();
+    updateCanva();
+});
+
+document.getElementById("getSolutionA*").addEventListener("click", function(evt){
+    let solucion = calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica)
+    if(solucion !== null)
+        solucionToString(solucion)
+});
+
+document.getElementById("getSolutionBacktracking").addEventListener("click", function(evt){
+    calcularSolucionConBacktracking();
+});
+
 
 function arraysEqual(a, b) { 
     return a.length === b.length && a.every((val, index) => val === b[index]); 
