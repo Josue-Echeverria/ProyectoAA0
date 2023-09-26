@@ -4,6 +4,8 @@ body {
     justify-content: center; 
     align-items: center; 
     height: 100vh; 
+    font-size: large;
+    font-family:Calibri;
 }
  
 #piezas{
@@ -16,12 +18,50 @@ body {
     background-color: rgb(171, 171, 171);
 }
 
+#tamañoDiv{
+    align-items: center;
+}
+
 #piezas button{
-    margin-top: 20px
+    margin-top: 10px
 }
 
 textarea {
     resize: none;
     height: 600px;
     width: 300px;
+}
+
+#opciones{
+    display:flex;
+    flex-direction: row;
+}
+
+#imagenes{
+    margin-right: 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+#playButtons{
+    margin-left: 25x;
+    display: flex;
+    flex-direction: column;
+}
+
+#playButtons button{
+    font-size: medium;
+}
+
+#imagenes button{
+    display: flex;
+    font-size: medium;
+    margin-left: 10px;
+    margin-right: 10px;
+    flex-direction: column;
+}
+
+.fila{
+    display: flex;
+    flex-direction: row;
 }

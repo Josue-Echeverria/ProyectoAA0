@@ -12,27 +12,61 @@
 <body id = "XD" onload="main()">
     <div id = "piezas">
         <canvas id="myCanvas" width="500" height="500"></canvas>
-         <!--<div id='container' >
-        <table id = 'imagen'>
-       
-        </table>
-        
-       
-        <label for="tamaño">Tamaño:</label>
-        <input type="number" min = "3" title="Introduzca solo numeros" id="tamaño" required><br><br>
-        
-        </div>-->
-        
-        <button id="suffle">Revolver</button> 
-        <button id="getSolution">Mostrar solucion</button>
-        <button id="solve">Resolver</button>
+        <div id = "opciones">
+            <div id = "imagenes">
+                <div class = "fila">
+                    <button id = "imagen1_seleccionada">
+                        Imagen 1
+                        <img src =  "img/img_ejemplo.png" width="80" height="50" >
+                    </button> 
+                    <button id = "imagen2_seleccionada">
+                        Imagen 2
+                        <img src =  "img/gatito.jpg" width="80" height="50" >
+                    </button> 
+                    <button id = "imagen3_seleccionada">
+                        Imagen 3
+                        <img src =  "img/gatito1.jpg" width="80" height="50" >
+                    </button> 
+                </div>
+                <div class = "fila">
+                    <button id = "imagen4_seleccionada">
+                        Imagen 4
+                        <img src =  "img/gatito2.jpg" width="80" height="50" >
+                    </button> 
+                    <button id = "imagen5_seleccionada">
+                        Imagen 5
+                        <img src =  "img/gatito3.jpg" width="80" height="50" >
+                    </button> 
+                    <button id = "imagen6_seleccionada">
+                        Imagen 6
+                        <img src =  "img/gatito4.jpg" width="80" height="50" >
+                    </button> 
+                </div>
+            </div>
+            <div id = "playButtons">
+                <button id="suffle">Revolver</button> 
+                <button id="getSolution">Mostrar solucion con Backtracking</button>
+                <button id="getSolution">Mostrar solucion con A*</button>
+                <button id="solve">Resolver</button>
+                <div id = "tamañoDiv">
+                    <label>Tamaño</label>
+                    <input id = "tamaño" type = "number" max = 20 min = 3>
+                    <button id="generate">Generar</button>
+
+                </div>
+            </div>
+        </div>
     </div>
     <div>
         <textarea id = "textareaSolution" rows="50" cols="25"></textarea>
     </div>
 
-
-    <img id = "imagen" src =  "img/img_ejemplo.png" style = display:none >
+    <img id = "imagen1" src =  "img/img_ejemplo.png" style = display:none>
+    <img id = "imagen2" src =  "img/gatito.jpg" style = display:none >
+    <img id = "imagen3" src =  "img/gatito1.jpg" style = display:none >
+    <img id = "imagen4" src =  "img/gatito2.jpg" style = display:none >
+    <img id = "imagen5" src =  "img/gatito3.jpg" style = display:none >
+    <img id = "imagen6" src =  "img/gatito4.jpg" style = display:none >
     <script src="app.js"></script>
 </body>
 </html>

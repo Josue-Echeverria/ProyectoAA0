@@ -12,54 +12,6 @@ let MATRIZ_OBJETIVO
 let dictObjetivo = {}
 
 
-document.getElementById("suffle").addEventListener("click", function(evt){
-    shuffle();
-});
-
-
-
-document.getElementById("getSolution").addEventListener("click", function(evt){
-    //solucionToString(calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica))
-    let ms = 1000
-    calcularSolucionConBacktracking(ms)
-});
-
-/**
- * @param {Node} nodo 
- * 
- * @description Se "devuelve" en el grafo para encontrar la serie de pasos para llegar a la solucion 
- */
-function solucionToString(nodo){
-    let temp = nodo;
-    while(temp.action != null){// El unico nodo con el parametro action en null es el primero 
-        document.getElementById("textareaSolution").value += movimientoToString(temp.action) 
-        temp = temp.parent// Se "sube" en el grafo 
-    }
-}
-document.getElementById("solve").addEventListener("click", function(evt){
-    let ms = 0
-    calcularSolucionConBacktracking(ms);
-});
-
-/**
- * @param {Array<Array<Int>>} movimiento El movimiento realizado [PosicionInicial, PosicionFinal]
- * @returns {String} String de pasos a seguir para llegar a la solucion
- * 
- * @description retornar la serie de pasos a seguir para llegar a la solucion del puzzle
- * 
- */
-function movimientoToString(movimiento){
-    let posicionInicial = movimiento[0]
-    let posicionFinal = movimiento[1]
-    const movimientoX = posicionFinal[0] - posicionInicial[0]
-    const movimientoY = posicionFinal[1] - posicionInicial[1]
-    if(movimientoX === 1) return posicionInicial.reverse() + " hacia la derecha\n"
-    else if(movimientoX === -1) return posicionInicial.reverse() + " hacia la izquierda\n"
-    else if(movimientoY === 1) return  posicionInicial.reverse() + " hacia abajo\n"
-    else if(movimientoY === -1) return  posicionInicial.reverse() + " hacia arriba\n"
-}
-
-
 /** 
  * @summary
  * Define variables globales:
@@ -70,8 +22,10 @@ function movimientoToString(movimiento){
  * 
  * Llama a las funciones necesarias para generar el puzzle
  */
-function main(){
-    IMAGEN = document.getElementById("imagen");
+function main(imagen){
+    if(imagen === undefined)
+        imagen = "imagen1"
+    IMAGEN = document.getElementById(imagen);
     CANVAS = document.getElementById('myCanvas');
     CONTEXT = CANVAS.getContext('2d');//Se utilizara el renderizado en 2d (para imagenes, formas, texto)
 
@@ -167,7 +121,7 @@ function shuffle(){
         }
         PIEZAS[i].x=loc.x;// Se asigna el x aleatorio
         PIEZAS[i].y=loc.y;// Se asigna el y aleatorio
-        MATRIZ_LOGICA[randomY][randomX] = PIEZAS[i].numero// Se guarda el numero de piza en la matriz de logica 
+        MATRIZ_LOGICA[randomY][randomX] = PIEZAS[i].numero// Se guarda el numero de pieza en la matriz de logica 
     }
     updateCanva();
     const pos = generateNotInList(tempList, TAMAÑO)// Se genera la posicion que no esta en la lista (la posicion de la pieza 9)
@@ -175,6 +129,7 @@ function shuffle(){
     EMPTYPOS.y = pos[1];// Se actualiza el y de la posicion vacia 
     MATRIZ_LOGICA[pos[1]][pos[0]] = 0// Se actualiza la posicion vacia en la matriz de logica
 }
+
 /**
  * @description Parte la imagen en piezas y las carga en la canva
  * Tambien define las variables globales: 
@@ -192,6 +147,8 @@ function cargarPiezas(){
         MATRIZ_OBJETIVO.push([])
         for(let j = 0; j<TAMAÑO; j++){
             PIEZAS.push(new Pieza(i,j,counter))
+            PIEZAS[PIEZAS.length-1].x = SIZE.width*j/TAMAÑO
+            PIEZAS[PIEZAS.length-1].y = SIZE.height*i/TAMAÑO
             MATRIZ_OBJETIVO[i][j] = counter // Se guarda el numero de pieza generada 
             MATRIZ_LOGICA[i][j] = counter // Se guarda el numero de pieza generada 
             dictObjetivo[counter] = [i,j] // Se guarda la posicion del numero de pieza generada 
@@ -203,8 +160,8 @@ function cargarPiezas(){
     MATRIZ_LOGICA[TAMAÑO-1][TAMAÑO-1] = 0;
     delete dictObjetivo[counter-1]
     PIEZAS.pop()
-    
-    MATRIZ_LOGICA = [[1,2,3],[4,8,5],[7,6,0]]
+    EMPTYPOS.x = TAMAÑO-1
+    EMPTYPOS.y = TAMAÑO-1
 }
 
 /**
@@ -517,20 +474,23 @@ function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovi
     let childNode;
     let copiaEstado;
     let node;
+    let profundidad = TAMAÑO*1000
     while (!frontier.isEmpty()) { //Mientras hayan posibles soluciones
         node = frontier.dequeue();// Se saca/almacena el primer nodo de la cola
         printMatriz(node.state)
         if (matrixEqual(node.state, objetivo)) {// SI el estado el nodo sacado es igual al objetivo
+            console.log(5000-profundidad)
             return node;
         }
         // Si no es
         explored.add(node.state.toString());// Se almacena esa solucion
-
+        if(profundidad === 0)
+            break;
+        profundidad--;
         movimientos = calcularPosiblesMovimientos(node.state);// Se calcula que movimientos se pueden hacer 
         
         for (let movimiento of movimientos) {
             if(movimiento.length !== 0){
-                //console.log(movimiento)
                 copiaEstado = JSON.parse(JSON.stringify(node.state))// Se saca una copia del estado actual 
                 // Se genera un nuevo nodo a partir de la conpia con el movimiento 
                 matrizMovida = realizarMovimiento(copiaEstado,movimiento[0],movimiento[1])
@@ -541,8 +501,170 @@ function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovi
             }
         }
     }
-    return false;
+    return null;
 }
+
+/**
+ * @param {Array<Array<Int>>} estadoActual Matriz  
+ * @returns Suma de distancias de todas las piezas hacia donde deberian de estar en la Matriz
+ * 
+ * @description Analiza y suma que tan lejos estan las piezas de su posicion objetivo y retorna esta suma entre la cantidad de piezas en el canvas 
+ */
+function calcularHeuristica(estadoActual){
+    let distanciaTotal = 0;
+
+    for(let i = 0; i < estadoActual.length; i++){
+        for(let j = 0; j < estadoActual.length; j++){
+            
+            let numActual = estadoActual[i][j]// Numero en la posicion actual
+
+            let posObjetivoNumActual = dictObjetivo[numActual]// Se saca la posicion en la que deberia de estar la pieza con numero actual
+
+            if(posObjetivoNumActual === undefined) continue // En caso que el numero se 0 (No tiene una posicion objetivo)
+
+            // Calcula la distancia de Manhattan para la pieza actual
+            let distancia = Math.abs(i - posObjetivoNumActual[0]) + Math.abs(j - posObjetivoNumActual[1]);
+
+            // Ajusta la distancia si hay una pieza en el camino
+            if ((i != posObjetivoNumActual[0] && estadoActual[posObjetivoNumActual[0]][j] != 0) ||
+                (j != posObjetivoNumActual[1] && estadoActual[i][posObjetivoNumActual[1]] != 0)) {
+                distancia += TAMAÑO;  // Ajusta el costo
+            }
+
+            distanciaTotal += distancia;
+        }
+    }
+    return distanciaTotal;
+}
+
+/**
+ * @param {Array<Array<Int>>} estadoActual Matriz de numeros con una posicion vacia 
+ * @returns Posibles posiciones a las que se puede mover el 0 
+ * 
+ * @description Analida las los lados de la posicion vacia y retorna cuales son las posiciones a las que puede ir 
+ */
+function calcularMovimientosParaVacio(estadoActual){
+    // Obtiene la posición vacía en el estado actual.
+    let posVacia = posicionVacia(estadoActual);
+    // Inicializa las variables que representan los posibles movimientos.
+    let moverDerecha = 1000;
+    let moverIzquierda = 1000;
+    let moverArriba = 1000;
+    let moverAbajo = 1000;
+
+    
+    if(posVacia[0]+1 < TAMAÑO) // Verifica si es posible moverse hacia abajo
+        moverAbajo = 1;
+    if(posVacia[0]-1 >= 0) // Verifica si es posible moverse hacia arriba
+        moverArriba = 1;
+    if(posVacia[1]-1 >= 0)// Verifica si es posible moverse hacia la izquierda
+        moverIzquierda = 1;
+    if(posVacia[1]+1 < TAMAÑO) // Verifica si es posible moverse hacia la derecha
+        moverDerecha = 1;
+    
+    let posiblesMovimientos = [];// Array para almacenar los posibles movimientos
+    
+    // Si es posible moverse hacia la derecha, añade este movimiento a la lista de posibles movimientos.
+    if(1000 !== moverDerecha) 
+        posiblesMovimientos.push([posVacia, [posVacia[0],posVacia[1]+1]]);
+    
+    // Si es posible moverse hacia la izquierda, añade este movimiento a la lista de posibles movimientos.
+    if(1000 !== moverIzquierda) 
+        posiblesMovimientos.push([posVacia, [posVacia[0],posVacia[1]-1]]);
+    
+    // Si es posible moverse hacia arriba, añade este movimiento a la lista de posibles movimientos.
+    if(1000 !== moverArriba) 
+        posiblesMovimientos.push([posVacia, [posVacia[0]-1,posVacia[1]]]);
+    
+    // Si es posible moverse hacia abajo, añade este movimiento a la lista de posibles movimientos.
+    if(1000 !== moverAbajo)
+        posiblesMovimientos.push([posVacia, [posVacia[0]+1,posVacia[1]]]);
+    
+    // Devuelve la lista de posibles movimientos.
+    return posiblesMovimientos;
+}
+
+
+/**
+ * @param {Array<Array<Int>>} estadoActual Copia de la matriz actualmente
+ * @param {Array<Int>} posicionInicial La posicion del numero que se va a mover 
+ * @param {Array<Int>} posicionFinal La posicion destino del numero que se va a mover
+ * @returns {Array<Array<Int>>} La matriz despues de realizar el moviento 
+ * 
+ * @description Aplica los cambios de numeros para aparentar un "movimiento" de pieza a la matriz de numeros 
+ */
+function realizarMovimiento(estadoActual, posicionInicial, posicionFinal){
+    estadoActual[posicionInicial[0]][posicionInicial[1]] = estadoActual[posicionFinal[0]][posicionFinal[1]]
+    //printMatriz(estadoActual)
+    estadoActual[posicionFinal[0]][posicionFinal[1]] = 0;
+    //printMatriz(estadoActual)
+    /*
+    const movimientoX = posicionFinal[0] - posicionInicial[0]
+    const movimientoY = posicionFinal[1] - posicionInicial[1]
+    if(movimientoX === 1) console.log( ". "+ posicionInicial.reverse() + " hacia la derecha\n")
+    else if(movimientoX === -1) console.log(". "+posicionInicial.reverse() +" hacia la izquierda\n")
+    else if(movimientoY === 1) console.log(". "+posicionInicial.reverse() +" hacia abajo\n")
+    else if(movimientoY === -1) console.log(". "+posicionInicial.reverse() +" hacia arriba\n")
+  */
+    return estadoActual;
+}
+
+
+/******************************************* funciones sin importancia ****************************************************************/
+
+
+
+document.getElementById("generate").addEventListener("click", function(evt){
+    TAMAÑO = document.getElementById("tamaño").value
+    cargarPiezas();
+    updateCanva();
+});
+
+document.getElementById("getSolutionA*").addEventListener("click", function(evt){
+    let solucion = calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica)
+    if(solucion !== null)
+        solucionToString(solucion)
+
+    //calcularSolucionConBacktracking()
+});
+
+/**
+ * @param {Node} nodo 
+ * 
+ * @description Se "devuelve" en el grafo para encontrar la serie de pasos para llegar a la solucion 
+ */
+function solucionToString(nodo){
+    let temp = nodo;
+    let contador = 1
+    document.getElementById("textareaSolution").value = ""
+    do{// El unico nodo con el parametro action en null es el primero 
+        document.getElementById("textareaSolution").value += contador + movimientoToString(temp.action) 
+        temp = temp.parent// Se "sube" en el grafo 
+        contador++;
+    }while(temp.action != null)
+}
+document.getElementById("solve").addEventListener("click", function(evt){
+    calcularSolucionConBacktracking();
+});
+
+/**
+ * @param {Array<Array<Int>>} movimiento El movimiento realizado [PosicionInicial, PosicionFinal]
+ * @returns {String} String de pasos a seguir para llegar a la solucion
+ * 
+ * @description retornar la serie de pasos a seguir para llegar a la solucion del puzzle
+ * 
+ */
+function movimientoToString(movimiento){
+    let posicionInicial = movimiento[0]
+    let posicionFinal = movimiento[1]
+    const movimientoX = posicionFinal[0] - posicionInicial[0]
+    const movimientoY = posicionFinal[1] - posicionInicial[1]
+    if(movimientoX === 1) return ". "+ posicionInicial.reverse() + " hacia la derecha\n"
+    else if(movimientoX === -1) return ". "+posicionInicial.reverse() +" hacia la izquierda\n"
+    else if(movimientoY === 1) return  ". "+posicionInicial.reverse() +" hacia abajo\n"
+    else if(movimientoY === -1) return  ". "+posicionInicial.reverse() +" hacia arriba\n"
+}
+
 
 /**
  * Imprime una matriz en la consola.
@@ -590,104 +712,39 @@ function arraysEqual(a, b) {
     return a.length === b.length && a.every((val, index) => val === b[index]); 
 } 
 
-/**
- * @param {Array<Array<Int>>} estadoActual Matriz  
- * @returns Suma de distancias de todas las piezas hacia donde deberian de estar en la Matriz
- * 
- * @description Analiza y suma que tan lejos estan las piezas de su posicion objetivo y retorna esta suma entre la cantidad de piezas en el canvas 
- */
-function calcularHeuristica(estadoActual){
-    let distanciaTotal = 0;
 
-    for(let i = 0; i < estadoActual.length; i++){
-        for(let j = 0; j < estadoActual.length; j++){
-            
-            let numActual = estadoActual[i][j]// Numero en la posicion actual
+document.getElementById("imagen1_seleccionada").addEventListener("click", function(evt){
+    main("imagen1");
+});
 
-            let posObjetivoNumActual = dictObjetivo[numActual]// Se saca la posicion en la que deberia de estar la pieza con numero actual
+document.getElementById("imagen2_seleccionada").addEventListener("click", function(evt){
+    main("imagen2");
 
-            if(posObjetivoNumActual === undefined) continue // En caso que el numero se 0 (No tiene una posicion objetivo)
+});
 
-            // Calcula la distancia de Manhattan para la pieza actual
-            let distancia = Math.abs(i - posObjetivoNumActual[0]) + Math.abs(j - posObjetivoNumActual[1]);
+document.getElementById("imagen3_seleccionada").addEventListener("click", function(evt){
+    main("imagen3");
 
-            // Ajusta la distancia si hay una pieza en el camino
-            if ((i != posObjetivoNumActual[0] && estadoActual[posObjetivoNumActual[0]][j] != 0) ||
-                (j != posObjetivoNumActual[1] && estadoActual[i][posObjetivoNumActual[1]] != 0)) {
-                distancia += 3;  // Ajusta el costo
-            }
+});
 
-            distanciaTotal += distancia;
-        }
-    }
-    return distanciaTotal;
-}
+document.getElementById("imagen4_seleccionada").addEventListener("click", function(evt){
+    main("imagen4");
 
-/**
- * @param {Array<Array<Int>>} estadoActual Matriz de numeros con una posicion vacia 
- * @returns Posibles posiciones a las que se puede mover el 0 
- * 
- * @description Analida las los lados de la posicion vacia y retorna cuales son las posiciones a las que puede ir 
- */
-function calcularMovimientosParaVacio(estadoActual){
-    // Obtiene la posición vacía en el estado actual.
-    let posVacia = posicionVacia(estadoActual);
-    
-    // Inicializa las variables que representan los posibles movimientos.
-    let moverDerecha = 1000;
-    let moverIzquierda = 1000;
-    let moverArriba = 1000;
-    let moverAbajo = 1000;
+});
 
-    
-    if(posVacia[0]+1 < TAMAÑO) // Verifica si es posible moverse hacia abajo
-        moverAbajo = 1;
-    if(posVacia[0]-1 >= 0) // Verifica si es posible moverse hacia arriba
-        moverArriba = 1;
-    if(posVacia[1]-1 >= 0)// Verifica si es posible moverse hacia la izquierda
-        moverIzquierda = 1;
-    if(posVacia[1]+1 < TAMAÑO) // Verifica si es posible moverse hacia la derecha
-        moverDerecha = 1;
-    
-    let posiblesMovimientos = [];// Array para almacenar los posibles movimientos
-    
-    // Si es posible moverse hacia la derecha, añade este movimiento a la lista de posibles movimientos.
-    if(1000 !== moverDerecha) 
-        posiblesMovimientos.push([posVacia, [posVacia[0],posVacia[1]+1]]);
-    
-    // Si es posible moverse hacia la izquierda, añade este movimiento a la lista de posibles movimientos.
-    if(1000 !== moverIzquierda) 
-        posiblesMovimientos.push([posVacia, [posVacia[0],posVacia[1]-1]]);
-    
-    // Si es posible moverse hacia arriba, añade este movimiento a la lista de posibles movimientos.
-    if(1000 !== moverArriba) 
-        posiblesMovimientos.push([posVacia, [posVacia[0]-1,posVacia[1]]]);
-    
-    // Si es posible moverse hacia abajo, añade este movimiento a la lista de posibles movimientos.
-    if(1000 !== moverAbajo)
-        posiblesMovimientos.push([posVacia, [posVacia[0]+1,posVacia[1]]]);
-    
-    // Devuelve la lista de posibles movimientos.
-    return posiblesMovimientos;
-}
+document.getElementById("imagen5_seleccionada").addEventListener("click", function(evt){
+    main("imagen5");
 
+});
 
-/**
- * @param {Array<Array<Int>>} estadoActual 
- * @param {Array<Int>} posicionInicial La posicion del numero que se va a mover 
- * @param {Array<Int>} posicionFinal La posicion destino del numero que se va a mover
- * @returns {Array<Array<Int>>} La matriz despues de realizar el moviento 
- * 
- * @description Aplica los cambios de numeros para aparentar un "movimiento" de pieza a la matriz de numeros 
- */
-function realizarMovimiento(estadoActual, posicionInicial, posicionFinal){
-    estadoActual[posicionInicial[0]][posicionInicial[1]] = estadoActual[posicionFinal[0]][posicionFinal[1]]
-    estadoActual[posicionFinal[0]][posicionFinal[1]] = 0;
-    return estadoActual;
-}
+document.getElementById("imagen6_seleccionada").addEventListener("click", function(evt){
+    main("imagen6");
 
+});
 
-
+document.getElementById("suffle").addEventListener("click", function(evt){
+    shuffle();
+});
 /******************************************* Clases ****************************************************************/
 
 class Pieza{
