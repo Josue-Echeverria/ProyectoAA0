@@ -10,6 +10,7 @@ let EMPTYPOS = {x: -1, y: -1}
 let MATRIZ_LOGICA
 let MATRIZ_OBJETIVO
 let dictObjetivo = {}
+let SOLUCION = [];
 
 
 /** 
@@ -373,63 +374,45 @@ function buscarPieza(fil, col){
     }
 }
 
+
 /**
  * @param {Array<Array<Int>>} resultado // El camino solucion encontrado
  * @param {Array<Int>} posVacia // array que contiene la fila y la columna de la posicion vacia
  * @param {Int} ms // milisegundos a esperar entre cada iteracion
  */
-
 async function colocarSolucion(resultado, posVacia, ms){    
     let fil = posVacia[0];
     let col = posVacia[1];
-
+    SOLUCION = [];
+    contador = 1
     for (const movimiento of resultado) {
+        SOLUCION.push(movimiento)
         const filSig = movimiento[0];
         const colSig = movimiento[1];
-        let pieza = buscarPieza(filSig, colSig);
 
-        pieza.x = SIZE.width*col/TAMAÑO;
-        pieza.y = SIZE.height*fil/TAMAÑO;        
-
-        [MATRIZ_LOGICA[fil][col], MATRIZ_LOGICA[filSig][colSig]] = [MATRIZ_LOGICA[filSig][colSig], MATRIZ_LOGICA[fil][col]];
-
-        updateCanva();
-
-        //revisar si es secuencia de paso o solo solucion
-        if (ms != 0){
-            //colocar un wait time
-
-            //secuencia de pasos en notacion sencilla
-            if (fil < filSig){ 
-                document.getElementById("textareaSolution").value += fil + ", " + col + " hacia abajo \n"; 
-            }
-
-            else if (fil > filSig){ 
-                document.getElementById("textareaSolution").value += fil + ", " + col + " hacia arriba \n"; 
-            }
-
-            else if (col < colSig){ 
-                document.getElementById("textareaSolution").value += fil + ", " + col + " hacia la derecha \n"; 
-            }
-
-            else if (col > colSig){ 
-                document.getElementById("textareaSolution").value += fil + ", " + col + " hacia la izquierda \n";
-            }
-
-            await esperar(ms);
+        if (fil < filSig){ 
+            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + col + "] hacia arriba \n"; 
         }
-
-        //actualizar las filas actuales
+        else if (fil > filSig){ 
+            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + col + "] hacia abajo \n"; 
+        }
+        else if (col < colSig){ 
+            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + col + "] hacia la izquierda \n"; 
+        }
+        else if (col > colSig){ 
+            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + col + "] hacia la derecha \n";
+        }
+    //actualizar las filas actuales
         fil = filSig;
         col = colSig;
+        contador++;
     }
+    SOLUCION.reverse()
 }
 
 /**
  * @param {Int} ms // milisegundos a esperar entre cada iteracion
  */
-
-
 function calcularSolucionConBacktracking(ms){
     let matrizBase = deepCopyArray(MATRIZ_OBJETIVO)
     
@@ -452,9 +435,11 @@ function calcularSolucionConBacktracking(ms){
         return;
     }
     else{
-        document.getElementById("textareaSolution").value += "No hay posible solucion o la profundidad no es suficiente";
+        document.getElementById("overlayNoSolucion").style.display = "flex";
     }
 }
+
+/***********************************-ALGORITMO DE A*-**************************************************************** */
 
 /**
  * 
@@ -474,21 +459,22 @@ function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovi
     let childNode;
     let copiaEstado;
     let node;
-    let profundidad = TAMAÑO*1000
+    let iteraciones = 0;
+    let tope = TAMAÑO*2*1000
     while (!frontier.isEmpty()) { //Mientras hayan posibles soluciones
         node = frontier.dequeue();// Se saca/almacena el primer nodo de la cola
-        printMatriz(node.state)
+        //printMatriz(node.state)
         if (matrixEqual(node.state, objetivo)) {// SI el estado el nodo sacado es igual al objetivo
-            console.log(5000-profundidad)
+            console.log(iteraciones)
             return node;
         }
         // Si no es
         explored.add(node.state.toString());// Se almacena esa solucion
-        if(profundidad === 0)
+        if(iteraciones === tope)
             break;
-        profundidad--;
+
         movimientos = calcularPosiblesMovimientos(node.state);// Se calcula que movimientos se pueden hacer 
-        
+
         for (let movimiento of movimientos) {
             if(movimiento.length !== 0){
                 copiaEstado = JSON.parse(JSON.stringify(node.state))// Se saca una copia del estado actual 
@@ -500,6 +486,7 @@ function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovi
                 }
             }
         }
+        iteraciones++;
     }
     return null;
 }
@@ -595,17 +582,7 @@ function calcularMovimientosParaVacio(estadoActual){
  */
 function realizarMovimiento(estadoActual, posicionInicial, posicionFinal){
     estadoActual[posicionInicial[0]][posicionInicial[1]] = estadoActual[posicionFinal[0]][posicionFinal[1]]
-    //printMatriz(estadoActual)
     estadoActual[posicionFinal[0]][posicionFinal[1]] = 0;
-    //printMatriz(estadoActual)
-    /*
-    const movimientoX = posicionFinal[0] - posicionInicial[0]
-    const movimientoY = posicionFinal[1] - posicionInicial[1]
-    if(movimientoX === 1) console.log( ". "+ posicionInicial.reverse() + " hacia la derecha\n")
-    else if(movimientoX === -1) console.log(". "+posicionInicial.reverse() +" hacia la izquierda\n")
-    else if(movimientoY === 1) console.log(". "+posicionInicial.reverse() +" hacia abajo\n")
-    else if(movimientoY === -1) console.log(". "+posicionInicial.reverse() +" hacia arriba\n")
-  */
     return estadoActual;
 }
 
@@ -620,13 +597,19 @@ function realizarMovimiento(estadoActual, posicionInicial, posicionFinal){
  */
 function solucionToString(nodo){
     let temp = nodo;
-    let contador = 1
+    if(temp.action === null){
+        document.getElementById("textareaSolution").value = "LISTO"
+        return 
+    }
+    let contador = temp.pathCost;
     document.getElementById("textareaSolution").value = ""
-    do{// El unico nodo con el parametro action en null es el primero 
-        document.getElementById("textareaSolution").value += contador + movimientoToString(temp.action) 
+    while(temp.action != null){// El unico nodo con el parametro action en null es el primero 
+        document.getElementById("textareaSolution").value = contador + movimientoToString(temp.action) + document.getElementById("textareaSolution").value 
+        SOLUCION.push(temp.action[1])        
         temp = temp.parent// Se "sube" en el grafo 
-        contador++;
-    }while(temp.action != null)
+        contador--;
+    }
+    document.getElementById("textareaSolution").value += "LISTO"
 }
 
 /**
@@ -639,12 +622,12 @@ function solucionToString(nodo){
 function movimientoToString(movimiento){
     let posicionInicial = movimiento[0]
     let posicionFinal = movimiento[1]
-    const movimientoX = posicionFinal[0] - posicionInicial[0]
-    const movimientoY = posicionFinal[1] - posicionInicial[1]
-    if(movimientoX === 1) return ". "+ posicionInicial.reverse() + " hacia la derecha\n"
-    else if(movimientoX === -1) return ". "+posicionInicial.reverse() +" hacia la izquierda\n"
-    else if(movimientoY === 1) return  ". "+posicionInicial.reverse() +" hacia abajo\n"
-    else if(movimientoY === -1) return  ". "+posicionInicial.reverse() +" hacia arriba\n"
+    const movimientofila = posicionFinal[0] - posicionInicial[0]
+    const movimientoColumna= posicionFinal[1] - posicionInicial[1]
+    if(movimientofila === 1) return ". " + posicionFinal + " hacia arriba\n"
+    else if(movimientofila === -1) return ". " + posicionFinal + " hacia abajo\n"
+    else if(movimientoColumna === 1) return  ". " + posicionFinal + " hacia izquierda\n"
+    else if(movimientoColumna === -1) return  ". " + posicionFinal + " hacia derecha\n"
 }
 
 
@@ -699,14 +682,44 @@ document.getElementById("generate").addEventListener("click", function(evt){
 
 document.getElementById("getSolutionA*").addEventListener("click", function(evt){
     let solucion = calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica)
-    if(solucion !== null)
+    if(solucion !== null){
         solucionToString(solucion)
+    }
+    else
+        document.getElementById("overlayNoSolucion").style.display = "flex";
 });
 
 document.getElementById("getSolutionBacktracking").addEventListener("click", function(evt){
     calcularSolucionConBacktracking();
 });
 
+document.getElementById("reiniciar").addEventListener("click", function(evt){
+    document.getElementById("overlayNoSolucion").style.display = "none";
+    cargarPiezas();
+    updateCanva();
+});
+
+document.getElementById("continuar1").addEventListener("click", function(evt){
+    document.getElementById("overlayNoSolucion").style.display = "none";
+});
+
+
+document.getElementById("continuar2").addEventListener("click", function(evt){
+    document.getElementById("overlayNoSearchSolucion").style.display = "none";
+});
+
+document.getElementById("solve").addEventListener("click", async function(evt){
+    if(SOLUCION === null){
+        document.getElementById("overlayNoSearchSolucion").style.display = "flex";
+    }else{
+        for(let i = SOLUCION.length-1; i >= 0; i--){
+            console.log(SOLUCION[i])
+            let pieza = buscarPieza(SOLUCION[i][0],SOLUCION[i][1])
+            moverPieza(pieza)
+            await esperar(500)
+        }
+    };
+});
 
 function arraysEqual(a, b) { 
     return a.length === b.length && a.every((val, index) => val === b[index]); 
