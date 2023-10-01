@@ -11,6 +11,8 @@ let MATRIZ_LOGICA;
 let MATRIZ_OBJETIVO
 let dictObjetivo = {}
 let SOLUCION = [];
+const profundidadMax = 250;
+const estadosProbadosMax = 5000000;
 
 
 /** 
@@ -277,11 +279,14 @@ function onclick(evt){
  * @description - Busca un posible camino solucion usando la tecnica de backtracking
  */
 function backtracking(estado, posVacia, estadosProbados, caminos, solucion, profundidad){
+    //console.log("\nAvanzando al estado: ")
+    //printMatriz(estado);
+    //console.log("Profundidad: ", profundidad);
     if(JSON.stringify(estado) === JSON.stringify(solucion)){        // se verifica si el estado actual es la solucion
         return caminos;                 
     }
 
-    if(profundidad < 1 || estadosProbados.size() > 5000000){        // se verifica que no se exceda el limite de profundidad y estados probados
+    if(profundidad < 1 || estadosProbados.size() > estadosProbadosMax){        // se verifica que no se exceda el limite de profundidad y estados probados
         return -1;
     }
 
@@ -307,6 +312,10 @@ function backtracking(estado, posVacia, estadosProbados, caminos, solucion, prof
             if(resultado != -1){                                    // se comprueba si el estado es solucion
                 return resultado                                    // de serlo, se retorna el camino encontrado
             }
+
+            //console.log("\nRetrocediendo al estado: ")
+            //printMatriz(estado);
+            //console.log("Profundidad: ", profundidad);
         }
     } 
 
@@ -449,12 +458,12 @@ function calcularSolucionConBacktracking(){
 
     let estadosProbados = new MatrixStorage();          // se inicializa la clase a usar como estados probados
     estadosProbados.addTestedMatrix(matrizRand);        // se agrega la matriz rand de la que se parte a los estados probados 
-    
-    const profundidad = 300;                            // profundidad limite
+    const profundidad = Math.trunc(profundidadMax / TAMAÑO);     // profundidad limite
     console.log("Profundidad usada: ", profundidad);    
 
     resultado = backtracking(matrizRand, posVacia, estadosProbados, [], matrizBase, profundidad);   // se obtiene el resultado
     console.log("Cantidad de estados probados: ", estadosProbados.size());          
+    
     document.getElementById("textareaSolution").value = "";
     
     if (resultado != -1) {                              // si da diferente de -1 encontro una solucion
@@ -492,8 +501,8 @@ function calcularSolucionConAEstrella(startState, calcularPosiblesMovimientos) {
     let topes = {3:2000,4:8000, 5:50000, 6:50000, 7:50000, 8:50000, 9:50000, 10:50000, 11:50000, 12:50000, 13:50000, 14:50000, 15:50000, 16:50000, 17:50000, 18:50000, 19:50000, 20:50000, }
     while (!frontier.isEmpty()) { //Mientras hayan posibles soluciones
         node = frontier.dequeue();// Se saca/almacena el primer nodo de la cola
-        printMatriz(node.state)
-        console.log(node.priority - node.pathCost)
+        //printMatriz(node.state)
+        //console.log(node.priority - node.pathCost)
         if(node.state[fila][columna] === contador && fila < TAMAÑO - 2){
             columna++;
             contador++;
@@ -502,10 +511,10 @@ function calcularSolucionConAEstrella(startState, calcularPosiblesMovimientos) {
                 fila++
             }
             frontier = new PriorityQueue()
-            console.log(contador)
+            //console.log(contador)
         }
         if (-(TAMAÑO**3)+TAMAÑO === node.priority - node.pathCost) {// SI el estado del nodo tiene una prioridad deseada
-            console.log(iteraciones)
+            //console.log(iteraciones)
             return node;
         }
         // Si no es
