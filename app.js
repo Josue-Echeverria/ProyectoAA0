@@ -7,7 +7,7 @@ let TAMAÑO = 3;
 let PIEZAS = [];
 let PIEZA_SELECCIONADA = null;
 let EMPTYPOS = {x: -1, y: -1}
-let MATRIZ_LOGICA
+let MATRIZ_LOGICA;
 let MATRIZ_OBJETIVO
 let dictObjetivo = {}
 let SOLUCION = [];
@@ -163,6 +163,7 @@ function cargarPiezas(){
     PIEZAS.pop()
     EMPTYPOS.x = TAMAÑO-1
     EMPTYPOS.y = TAMAÑO-1
+   // MATRIZ_LOGICA = [[ 1,  2,  3,  4],[ 5,  6,  7,  8],[ 9, 10, 0,15 ],[13, 14, 12, 11]]
 }
 
 /**
@@ -444,13 +445,11 @@ function calcularSolucionConBacktracking(ms){
 /**
  * 
  * @param {Array<Array<Int>>} startState // Estado en el que inicia el juego al presionar el boton
- * @param {Array<Array<Int>>} objetivo // La matriz que se busca 
  * @param {Function} calcularPosiblesMovimientos // Funcion que calcula los posibles movimientos para el estado actual
- * @param {Function} calcularHeuristica // Funcion para calcular 
  * @returns {Node}El nodo para llegar a la solucion 
  * 
  */
-function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovimientos, calcularHeuristica) {
+function calcularSolucionConAEstrella(startState, calcularPosiblesMovimientos) {
     let frontier = new PriorityQueue();// Variable que lleva cuenta de todas las soluciones posibles 
     frontier.enqueue(new Node(startState, null, null, 0, calcularHeuristica(startState)));// Se guarda la primera con la matriz que inicia el juego
     let explored = new Set(); // Para saber cuales soluciones ya se consideraron  
@@ -460,17 +459,31 @@ function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovi
     let copiaEstado;
     let node;
     let iteraciones = 0;
-    let tope = TAMAÑO*2*1000
+    let contador = 1;
+    let fila = 0;
+    let columna = 0;
+    let topes = {3:2000,4:8000, 5:50000, 6:50000, 7:50000, 8:50000, 9:50000, 10:50000, 11:50000, 12:50000, 13:50000, 14:50000, 15:50000, 16:50000, 17:50000, 18:50000, 19:50000, 20:50000, }
     while (!frontier.isEmpty()) { //Mientras hayan posibles soluciones
         node = frontier.dequeue();// Se saca/almacena el primer nodo de la cola
-        //printMatriz(node.state)
-        if (matrixEqual(node.state, objetivo)) {// SI el estado el nodo sacado es igual al objetivo
+        printMatriz(node.state)
+        console.log(node.priority - node.pathCost)
+        if(node.state[fila][columna] === contador && fila < TAMAÑO - 2){
+            columna++;
+            contador++;
+            if(columna === TAMAÑO-1){
+                columna = 0 
+                fila++
+            }
+            frontier = new PriorityQueue()
+            console.log(contador)
+        }
+        if (-(TAMAÑO**3)+TAMAÑO === node.priority - node.pathCost) {// SI el estado del nodo tiene una prioridad deseada
             console.log(iteraciones)
             return node;
         }
         // Si no es
         explored.add(node.state.toString());// Se almacena esa solucion
-        if(iteraciones === tope)
+        if(iteraciones === topes[TAMAÑO])
             break;
 
         movimientos = calcularPosiblesMovimientos(node.state);// Se calcula que movimientos se pueden hacer 
@@ -499,25 +512,28 @@ function calcularSolucionConAEstrella(startState, objetivo, calcularPosiblesMovi
  */
 function calcularHeuristica(estadoActual){
     let distanciaTotal = 0;
-
+    let distancia;
+    let posObjetivoNumActual;
+    let numActual;
     for(let i = 0; i < estadoActual.length; i++){
         for(let j = 0; j < estadoActual.length; j++){
             
-            let numActual = estadoActual[i][j]// Numero en la posicion actual
+            numActual = estadoActual[i][j]// Numero en la posicion actual
 
-            let posObjetivoNumActual = dictObjetivo[numActual]// Se saca la posicion en la que deberia de estar la pieza con numero actual
+            posObjetivoNumActual = dictObjetivo[numActual]// Se saca la posicion en la que deberia de estar la pieza con numero actual
 
             if(posObjetivoNumActual === undefined) continue // En caso que el numero se 0 (No tiene una posicion objetivo)
 
             // Calcula la distancia de Manhattan para la pieza actual
-            let distancia = Math.abs(i - posObjetivoNumActual[0]) + Math.abs(j - posObjetivoNumActual[1]);
+            distancia = Math.abs(i - posObjetivoNumActual[0]) + Math.abs(j - posObjetivoNumActual[1]);
 
             // Ajusta la distancia si hay una pieza en el camino
             if ((i != posObjetivoNumActual[0] && estadoActual[posObjetivoNumActual[0]][j] != 0) ||
                 (j != posObjetivoNumActual[1] && estadoActual[i][posObjetivoNumActual[1]] != 0)) {
-                distancia += TAMAÑO;  // Ajusta el costo
-            }
-
+                distancia *= TAMAÑO;//  Ajusta el costo
+            }//else
+            else if(distancia === 0)
+                distanciaTotal -= TAMAÑO
             distanciaTotal += distancia;
         }
     }
@@ -596,6 +612,7 @@ function realizarMovimiento(estadoActual, posicionInicial, posicionFinal){
  * @description Se "devuelve" en el grafo para encontrar la serie de pasos para llegar a la solucion 
  */
 function solucionToString(nodo){
+    SOLUCION = [];
     let temp = nodo;
     if(temp.action === null){
         document.getElementById("textareaSolution").value = "LISTO"
@@ -675,13 +692,14 @@ function matrixEqual(a,b){
 
 
 document.getElementById("generate").addEventListener("click", function(evt){
-    TAMAÑO = document.getElementById("tamaño").value
+    TAMAÑO = parseInt(document.getElementById("tamaño").value);
+    document.getElementById("textareaSolution").value = ""
     cargarPiezas();
     updateCanva();
 });
 
 document.getElementById("getSolutionA*").addEventListener("click", function(evt){
-    let solucion = calcularSolucionConAEstrella(MATRIZ_LOGICA, MATRIZ_OBJETIVO, calcularMovimientosParaVacio, calcularHeuristica)
+    let solucion = calcularSolucionConAEstrella(MATRIZ_LOGICA, calcularMovimientosParaVacio)
     if(solucion !== null){
         solucionToString(solucion)
     }
@@ -756,6 +774,8 @@ document.getElementById("imagen6_seleccionada").addEventListener("click", functi
 });
 
 document.getElementById("suffle").addEventListener("click", function(evt){
+    document.getElementById("textareaSolution").value = ""
+    SOLUCION = null
     shuffle();
 });
 /******************************************* Clases ****************************************************************/
