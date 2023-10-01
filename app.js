@@ -252,43 +252,51 @@ function onclick(evt){
     }
 }
 
+
+/***********************************-ALGORITMO DE BACKTRACKING*-**************************************************************** */
+
+
 /**
- * @param {Array<Array<Int>>} estado // Estado que contiene la matriz actual
- * @param {Array<Int>} posVacia // Contiene la fila y columna en la cual se encuentra el vacio 
- * @param {MatrixStorage} estadosProbados // Contiene las matrices ya probadas 
- * @param {Array<Array<Int>>} caminos // Contiene los diversos movientos realizados para llegar a una posible solucion 
- * @param {Array<Array<Int>>} solucion // Contiene el estado al que se quiere llegar, condicion principal de salida
- * @param {Int} profundidad // Es la maxima profundidad de recursion
- * @returns {Array<Array<Int>>} resultado // El camino solucion o un -1 en caso de no encotrarla.
+ * @param {Array<Array<Int>>} estado - Estado que contiene la matriz actual
+ * @param {Array<Int>} posVacia - Contiene la fila y columna en la cual se encuentra el vacio 
+ * @param {MatrixStorage} estadosProbados - Contiene las matrices ya probadas 
+ * @param {Array<Array<Int>>} caminos - Contiene los diversos movientos realizados para llegar a una posible solucion 
+ * @param {Array<Array<Int>>} solucion - Contiene el estado al que se quiere llegar, condicion principal de salida
+ * @param {Int} profundidad - Es la maxima profundidad de recursion
+ * @returns {Array<Array<Int>>} resultado - El camino solucion o un -1 en caso de no encotrarla.
  * 
+ * @description - Busca un posible camino solucion usando la tecnica de backtracking
  */
 function backtracking(estado, posVacia, estadosProbados, caminos, solucion, profundidad){
-    if(JSON.stringify(estado) === JSON.stringify(solucion)){
-        return caminos;
+    if(JSON.stringify(estado) === JSON.stringify(solucion)){        // se verifica si el estado actual es la solucion
+        return caminos;                 
     }
 
-    if(profundidad < 1){
+    if(profundidad < 1 || estadosProbados.size() > 5000000){        // se verifica que no se exceda el limite de profundidad y estados probados
         return -1;
     }
 
-    let posiblesCaminos = [];
+    // se inicializan los posibles caminos y estados, y se generan 
+    let posiblesCaminos = [];       
     let posiblesEstados = [];
     generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEstados);
     
+    // recorre todos los posibles estados generados
     for(let i = 0; i < posiblesEstados.length; i++){
+
+        // se obtiene el nuevo estado y camino actual generado
         let nuevoEstado = posiblesEstados[i];
         let nuevoCamino = posiblesCaminos[i];
 
-        if (!estadosProbados.isTestedMatrix(nuevoEstado)) {
-            let nuevosCaminos = deepCopyArray(caminos);
-            //let nuevosEstados = estadosProbados.createCopy();
-            nuevosCaminos.push(nuevoCamino);
-            //nuevosEstados.addTestedMatrix(nuevoEstado);
-            estadosProbados.addTestedMatrix(nuevoEstado);
-            let resultado = backtracking(nuevoEstado, nuevoCamino, estadosProbados, nuevosCaminos, solucion, profundidad - 1);
+        if (!estadosProbados.isTestedMatrix(nuevoEstado)) {         // se verifica que el nuevo estado no haya sido probado 
+            let nuevosCaminos = deepCopyArray(caminos);             // se crea una copia real del camino actual
+            nuevosCaminos.push(nuevoCamino);                        // se agrega el nuevo camino a la copia
+            estadosProbados.addTestedMatrix(nuevoEstado);           // se agrega el nuevo estado probado a los estados probados
+            // llamada recursiva con los datos actualizados
+            let resultado = backtracking(nuevoEstado, nuevoCamino, estadosProbados, nuevosCaminos, solucion, profundidad - 1); 
 
-            if(resultado != -1){
-                return resultado 
+            if(resultado != -1){                                    // se comprueba si el estado es solucion
+                return resultado                                    // de serlo, se retorna el camino encontrado
             }
         }
     } 
@@ -297,23 +305,23 @@ function backtracking(estado, posVacia, estadosProbados, caminos, solucion, prof
 }
 
 /**
- * @param {Array<Array<Int>>} estado // Estado que contiene la matriz actual
- * @param {Array<Int>} posVacia // Contiene la fila y columna en la cual se encuentra el vacio 
- * @param {Array<Array<Int>>} posiblesCaminos // Guarda los nuevos posibles caminos segun el estado actual
- * @param {Array<Array<Int>>} posiblesEstados // Guarda los nuevos posibles estados segun el estado actual
+ * @param {Array<Array<Int>>} estado - Estado que contiene la matriz actual
+ * @param {Array<Int>} posVacia - Contiene la fila y columna en la cual se encuentra el vacio 
+ * @param {Array<Array<Int>>} posiblesCaminos - Guarda los nuevos posibles caminos segun el estado actual
+ * @param {Array<Array<Int>>} posiblesEstados - Guarda los nuevos posibles estados segun el estado actual
+ * 
+ * @description - para un estado ingresado, genera los nuevos posibles movimientos
  */
 function generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEstados){
     const fila = posVacia[0];
     const columna = posVacia[1];
     const n = estado.length;
-    let temp = estado
 
     if (fila > 0){              //pasar el vacio para arriba
         let posibleEstado = deepCopyArray(estado);
         const temp = posibleEstado[fila][columna];
         posibleEstado[fila][columna] = posibleEstado[fila - 1][columna];
         posibleEstado[fila - 1][columna] = temp;
-        //printMatrix(estado);
         posiblesEstados.push(posibleEstado);
         posiblesCaminos.push([fila - 1, columna]);
     }
@@ -323,7 +331,6 @@ function generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEs
         const temp = posibleEstado[fila][columna];
         posibleEstado[fila][columna] = posibleEstado[fila + 1][columna];
         posibleEstado[fila + 1][columna] = temp;
-        //printMatrix(estado);
         posiblesEstados.push(posibleEstado);
         posiblesCaminos.push([fila + 1, columna]);
     }
@@ -333,7 +340,6 @@ function generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEs
         const temp = posibleEstado[fila][columna];
         posibleEstado[fila][columna] = posibleEstado[fila][columna - 1];
         posibleEstado[fila][columna - 1] = temp;
-        //printMatrix(estado);
         posiblesEstados.push(posibleEstado);
         posiblesCaminos.push([fila, columna - 1]);
     }
@@ -343,15 +349,16 @@ function generarPosiblesSoluciones(estado, posVacia, posiblesCaminos, posiblesEs
         const temp = posibleEstado[fila][columna];
         posibleEstado[fila][columna] = posibleEstado[fila][columna + 1];
         posibleEstado[fila][columna + 1] = temp;
-        //printMatrix(estado);
         posiblesEstados.push(posibleEstado);
         posiblesCaminos.push([fila, columna + 1]);
     }
 }
 
 /**
- * @param {Array<Int>} arr // Matriz que se desea copiar
- * @returns {Array<Int>}  // La matriz copia creada
+ * @param {Array<Int>} arr - Matriz que se desea copiar
+ * @returns {Array<Int>}  - La matriz copia creada
+ * 
+ * @description - dado una matriz, genera una nueva copia de esta, que no modique la original
  */
 
 function deepCopyArray(arr) {
@@ -359,51 +366,59 @@ function deepCopyArray(arr) {
 }
 
 /**
- * @param {Int} fil // fila de la pieza a buscar
- * @param {Int} col // columna de la pieza a buscar
- * @returns {Pieza}  // La pieza encontrada
+ * @param {Int} fil - fila de la pieza a buscar
+ * @param {Int} col - columna de la pieza a buscar
+ * @returns {Pieza} - La pieza encontrada
+ * 
+ * @description - dado una fila y columna, busca cual pieza cumple con dichas posiciones
  */
 
 function buscarPieza(fil, col){
-    x = SIZE.width*col/TAMAÑO;
-    y = SIZE.height*fil/TAMAÑO;
+    x = SIZE.width*col/TAMAÑO;      // ajustar la columna
+    y = SIZE.height*fil/TAMAÑO;     // ajustar la fila
 
+    // se busca la pieza que cumpla con la fila y columna ingresada
     for(let i = 0; i<PIEZAS.length;i++){
         if(PIEZAS[i].x === x && PIEZAS[i].y === y){
-            return PIEZAS[i]
+            return PIEZAS[i]    
         }
     }
 }
 
 
 /**
- * @param {Array<Array<Int>>} resultado // El camino solucion encontrado
- * @param {Array<Int>} posVacia // array que contiene la fila y la columna de la posicion vacia
- * @param {Int} ms // milisegundos a esperar entre cada iteracion
+ * @param {Array<Array<Int>>} resultado - El camino solucion encontrado
+ * @param {Array<Int>} posVacia - array que contiene la fila y la columna de la posicion vacia
+ * 
+ * @description - dado un camino solucion, imprime en un cuadro de texto los pasos a seguir
  */
-async function colocarSolucion(resultado, posVacia, ms){    
+async function colocarSolucion(resultado, posVacia){    
     let fil = posVacia[0];
     let col = posVacia[1];
     SOLUCION = [];
     contador = 1
+
     for (const movimiento of resultado) {
         SOLUCION.push(movimiento)
+        // se obtiene la fila y columna del moviento que hay que hacer
         const filSig = movimiento[0];
         const colSig = movimiento[1];
 
+        // se imprime el movimiento actual en el campo de texto de la solucion
         if (fil < filSig){ 
-            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + col + "] hacia arriba \n"; 
+            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + colSig + "] hacia arriba \n"; 
         }
         else if (fil > filSig){ 
-            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + col + "] hacia abajo \n"; 
+            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + colSig + "] hacia abajo \n"; 
         }
         else if (col < colSig){ 
-            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + col + "] hacia la izquierda \n"; 
+            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + colSig + "] hacia la izquierda \n"; 
         }
         else if (col > colSig){ 
-            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + col + "] hacia la derecha \n";
+            document.getElementById("textareaSolution").value += contador + ". [" + filSig + "," + colSig + "] hacia la derecha \n";
         }
-    //actualizar las filas actuales
+
+        //actualizar las filas actuales y el contador
         fil = filSig;
         col = colSig;
         contador++;
@@ -412,33 +427,36 @@ async function colocarSolucion(resultado, posVacia, ms){
 }
 
 /**
- * @param {Int} ms // milisegundos a esperar entre cada iteracion
+ * 
+ * @description - inicializa los datos para llamar al backtracking y mostrar el posible resultado 
  */
-function calcularSolucionConBacktracking(ms){
-    let matrizBase = deepCopyArray(MATRIZ_OBJETIVO)
-    
-    let matrizRand = deepCopyArray(MATRIZ_LOGICA)
-    console.log(matrizRand)
-    let posVacia = [];
-    posVacia.push(EMPTYPOS.y);
-    posVacia.push(EMPTYPOS.x);
 
-    let estadosProbados = new MatrixStorage();
-    estadosProbados.addTestedMatrix(matrizRand);
-    
-    const profundidad = 250;
+function calcularSolucionConBacktracking(){
+    let matrizBase = deepCopyArray(MATRIZ_OBJETIVO);    // matriz solucion
+    let matrizRand = deepCopyArray(MATRIZ_LOGICA);      // matriz aleatoria generada
+    let posVacia = [];                                  // posicion en la que se encuentra el espacio vacio
+    posVacia.push(EMPTYPOS.y);                          // se guarda la fila de la pos vacia
+    posVacia.push(EMPTYPOS.x);                          // se guarda la columna de la pos vacia
 
-    resultado = backtracking(matrizRand, posVacia, estadosProbados, [], matrizBase, profundidad);
+    let estadosProbados = new MatrixStorage();          // se inicializa la clase a usar como estados probados
+    estadosProbados.addTestedMatrix(matrizRand);        // se agrega la matriz rand de la que se parte a los estados probados 
+    
+    const profundidad = 300;                            // profundidad limite
+    console.log("Profundidad usada: ", profundidad);    
+
+    resultado = backtracking(matrizRand, posVacia, estadosProbados, [], matrizBase, profundidad);   // se obtiene el resultado
+    console.log("Cantidad de estados probados: ", estadosProbados.size());          
     document.getElementById("textareaSolution").value = "";
-
-    if (resultado != -1) {
-        colocarSolucion(resultado, posVacia, ms);
+    
+    if (resultado != -1) {                              // si da diferente de -1 encontro una solucion
+        colocarSolucion(resultado, posVacia, ms);       // coloca la solucion encontrada en el campo de texto
         return;
     }
-    else{
+    else{                                               // caso en el que no haya solucion posible, o los recursos no son suficientes
         document.getElementById("overlayNoSolucion").style.display = "flex";
     }
 }
+
 
 /***********************************-ALGORITMO DE A*-**************************************************************** */
 
