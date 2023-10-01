@@ -449,7 +449,7 @@ function calcularSolucionConBacktracking(){
     document.getElementById("textareaSolution").value = "";
     
     if (resultado != -1) {                              // si da diferente de -1 encontro una solucion
-        colocarSolucion(resultado, posVacia, ms);       // coloca la solucion encontrada en el campo de texto
+        colocarSolucion(resultado, posVacia);       // coloca la solucion encontrada en el campo de texto
         return;
     }
     else{                                               // caso en el que no haya solucion posible, o los recursos no son suficientes
@@ -872,5 +872,8 @@ class MatrixStorage {
         let nuwStorageMatrix = new MatrixStorage();
         nuwStorageMatrix.testedMatrices = new Set(this.testedMatrices);
         return nuwStorageMatrix;
+    }
+    size() {
+        return this.testedMatrices.size;
     }
 }
