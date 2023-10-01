@@ -163,7 +163,6 @@ function cargarPiezas(){
     PIEZAS.pop()
     EMPTYPOS.x = TAMAÑO-1
     EMPTYPOS.y = TAMAÑO-1
-   // MATRIZ_LOGICA = [[ 1,  2,  3,  4],[ 5,  6,  7,  8],[ 9, 10, 0,15 ],[13, 14, 12, 11]]
 }
 
 /**
@@ -172,12 +171,21 @@ function cargarPiezas(){
  * @description Mueve la pieza que entra por parametro a la posicion vacia si esta pieza se encuentra a la par de la posicion vacia
  */
 function moverPieza(pieza){
+
+    if(pieza === undefined)
+        return;
+    const movimientoX = (SIZE.width/TAMAÑO)
+    const movimientoY = (SIZE.height/TAMAÑO)
+    
     // Calcula la posición vacía en el canvas.
-    const posX = SIZE.width*EMPTYPOS.x/TAMAÑO;
-    const posY = SIZE.height*EMPTYPOS.y/TAMAÑO;
+    const emptyX = (movimientoX*EMPTYPOS.x).toFixed(2);
+    const emptyY = (movimientoY*EMPTYPOS.y).toFixed(2);
+
+    const posPiezaX = (pieza.x)
+    const posPiezaY = (pieza.y)
 
     // Verifica si la pieza puede moverse a la derecha hacia la posición vacía.
-    if(pieza.x+SIZE.width/TAMAÑO === posX && pieza.y === posY){
+    if((posPiezaX+movimientoX).toFixed(2) === emptyX && (posPiezaY).toFixed(2) === emptyY){
         // Actualiza la matriz lógica para reflejar el movimiento de la pieza.
         MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = pieza.numero;
         EMPTYPOS.x = pieza.x/(SIZE.width/TAMAÑO);
@@ -186,7 +194,7 @@ function moverPieza(pieza){
         pieza.x = pieza.x+SIZE.width/TAMAÑO;
     }
     // Verifica si la pieza puede moverse a la izquierda hacia la posición vacía.
-    if(pieza.x-SIZE.width/TAMAÑO === posX && pieza.y === posY){
+    if((posPiezaX-movimientoX).toFixed(2) === emptyX && (posPiezaY).toFixed(2) === emptyY){
         // Actualiza la matriz lógica para reflejar el movimiento de la pieza.
         MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = pieza.numero;
         EMPTYPOS.x = pieza.x/(SIZE.width/TAMAÑO);
@@ -195,16 +203,16 @@ function moverPieza(pieza){
         pieza.x = pieza.x-SIZE.width/TAMAÑO;
     }
     // Verifica si la pieza puede moverse hacia abajo hacia la posición vacía.
-    if(pieza.y+SIZE.height/TAMAÑO === posY && pieza.x === posX){
+    if((posPiezaY+movimientoY).toFixed(2) === emptyY && (posPiezaX).toFixed(2) === emptyX){
         // Actualiza la matriz lógica para reflejar el movimiento de la pieza.
         MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = pieza.numero;
-        EMPTYPOS.y = pieza.y/(SIZE.height/TAMAÑO);
+        EMPTYPOS.y = Math.round(pieza.y/(SIZE.height/TAMAÑO));
         MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = 0;
         // Mueve la pieza hacia abajo.
         pieza.y = pieza.y+SIZE.height/TAMAÑO;
     }
     // Verifica si la pieza puede moverse hacia arriba hacia la posición vacía.
-    if(pieza.y-SIZE.height/TAMAÑO === posY && pieza.x === posX){
+    if((posPiezaY-movimientoY).toFixed(2) === emptyY && (posPiezaX).toFixed(2) === emptyX){
         // Actualiza la matriz lógica para reflejar el movimiento de la pieza.
         MATRIZ_LOGICA[EMPTYPOS.y][EMPTYPOS.x] = pieza.numero;
         EMPTYPOS.y = pieza.y/(SIZE.height/TAMAÑO);
@@ -225,7 +233,7 @@ function moverPieza(pieza){
 function getPiezaSeleccionada(loc){
     // Obtiene el tamaño del elemento CANVAS y su posición relativa al viewport.
     const rect = CANVAS.getBoundingClientRect();
-
+//    console.log(loc)
     for(let i = 0; i<PIEZAS.length;i++){
         // Verifica si la posición del clic del usuario (loc.x, loc.y) está dentro de la pieza actual.
         if(loc.x - rect.x > PIEZAS[i].x
@@ -233,7 +241,7 @@ function getPiezaSeleccionada(loc){
         && loc.y - rect.y > PIEZAS[i].y
         && loc.y - rect.y < PIEZAS[i].y+PIEZAS[i].height)
         {
-            // Si el clic del usuario está dentro de la pieza, devuelve esa pieza.
+            // Si el clic del usuario está dentro de la pieza, devuelve esa pieza
             return PIEZAS[i];
         }
     }
@@ -247,6 +255,7 @@ function getPiezaSeleccionada(loc){
  */
 function onclick(evt){
     PIEZA_SELECCIONADA = getPiezaSeleccionada(evt);
+    console.log(PIEZA_SELECCIONADA)
     if(PIEZA_SELECCIONADA != null){// Si hay una pieza en el rango del click y esta junto a una posicion vacia 
         moverPieza(PIEZA_SELECCIONADA)// Se mueve esa pieza
     }
